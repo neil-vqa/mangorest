@@ -1,7 +1,9 @@
-from bson import json_util
+from typing import Any, Dict, List, Optional
+
+from bson import json_util, objectid
 from pymongo.database import Database
 
-from mangorest import config
+from mangorest import config, mongo
 
 collection_set = set(config.COLLECTION.split(","))
 
@@ -11,25 +13,38 @@ def parse_object_id(document):
     return document
 
 
-def check_collection(collection):
-    if not collection in collection_set:
+def check_collection(collection_name):
+    if not collection_name in collection_set:
         raise ValueError("Collection not set to be exposed to REST clients.")
 
 
-def fetch_collection(db: Database, collection):
-    check_collection(collection)
-    db_collection = db[collection]
-    documents = [parse_object_id(item) for item in db_collection.find()]
+def fetch_collection(db: Database, collection_name: Any, query: Optional[Dict]):
+    """
+    TODO: Build the filter argument from query,
+    then pass to mongo.query_collection()
+    """
+    check_collection(collection_name)
+    db_collection = db[collection_name]
+    query_result = mongo.query_collection(db_collection, query)
+    documents = [parse_object_id(item) for item in query_result]
     return documents
 
 
-def create_document(db: Database, collection, document_obj):
-    check_collection(collection)
-    db_collection = db[collection]
+def create_document(db: Database, collection_name: Any, document_obj: Any):
+    check_collection(collection_name)
+    db_collection = db[collection_name]
 
-    if isinstance(document_obj, dict):
-        document_obj_id = db_collection.insert_one(document_obj).inserted_id
-        return json_util.dumps(document_obj_id)
-    elif isinstance(document_obj, list):
-        document_obj_ids = db_collection.insert_many(document_obj).inserted_ids
-        return [json_util.dumps(item) for item in document_obj_ids]
+    if isinstance(document_obj, Dict):
+        document_oid = mongo.insert_single_document(db_collection, document_obj)
+        return json_util.dumps(document_oid)
+    elif isinstance(document_obj, List):
+        document_oids = mongo.insert_multiple_documents(db_collection, document_obj)
+        return [json_util.dumps(item) for item in document_oids]
+
+
+def fetch_document(db: Database, collection_name: Any, oid: str):
+    check_collection(collection_name)
+    db_collection = db[collection_name]
+    query_result = mongo.query_document(db_collection, oid)
+    parsed_document = parse_object_id(query_result)
+    return parsed_document

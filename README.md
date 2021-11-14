@@ -1,8 +1,8 @@
 ![mangorest-logo](mangorest-logo.png)
 
-<p style="text-align: center; font-style: italic;">Serve a RESTful API from any MongoDB database.</p>
+<p align="center"><em>Serve a RESTful API from any MongoDB database.</em></p>
 
-<p style="text-align: center; font-weight: bold;">WORK IN PROGRESS</p>
+<p align="center"><strong>WORK IN PROGRESS</strong></p>
 
 ## Motivation
 
