@@ -1,6 +1,8 @@
+import json
 from typing import Any, Dict, List, Optional
 
 from bson import json_util
+from bson.objectid import ObjectId
 from pymongo.database import Database
 
 from mangorest import config, mongo
@@ -10,9 +12,13 @@ collection_set = set(config.COLLECTION.split(","))
 
 def parse_object_id(document):
     """Converts ObjectId to be serializable."""
-
-    document["_id"] = json_util.dumps(document["_id"])
-    return document
+    if isinstance(document, Dict):
+        document["_id"] = json.loads(json_util.dumps(document["_id"]))
+        return document
+    elif isinstance(document, ObjectId):
+        oid = json.loads(json_util.dumps(document))
+        oid_dict = {"_id": oid}
+        return oid_dict
 
 
 def check_collection(collection_name):
@@ -44,10 +50,10 @@ def create_document(db: Database, collection_name: Any, document_obj: Any):
 
     if isinstance(document_obj, Dict):
         document_oid = mongo.insert_single_document(db_collection, document_obj)
-        return json_util.dumps(document_oid)
+        return parse_object_id(document_oid)
     elif isinstance(document_obj, List):
         document_oids = mongo.insert_multiple_documents(db_collection, document_obj)
-        return [json_util.dumps(item) for item in document_oids]
+        return [parse_object_id(item) for item in document_oids]
 
 
 def fetch_document(db: Database, collection_name: Any, oid: str) -> Dict:

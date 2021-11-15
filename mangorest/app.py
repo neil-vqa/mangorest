@@ -1,4 +1,5 @@
 from typing import Tuple
+
 from flask import Flask, abort, jsonify, request
 from flask.wrappers import Response
 from flask_cors import CORS
