@@ -1,3 +1,3 @@
 #! /usr/bin/sh
 
-autoflake --in-place --recursive mangorest && isort mangorest && black mangorest
+autoflake --imports=pymongo,bson --in-place --recursive mangorest && isort mangorest && black mangorest

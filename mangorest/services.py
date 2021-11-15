@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from bson import json_util, objectid
+from bson import json_util
 from pymongo.database import Database
 
 from mangorest import config, mongo
@@ -58,3 +58,14 @@ def fetch_document(db: Database, collection_name: Any, oid: str) -> Dict:
     query_result = mongo.query_document(db_collection, oid)
     parsed_document = parse_object_id(query_result)
     return parsed_document
+
+
+def update_document(
+    db: Database, collection_name: Any, oid: str, document_obj: Any
+) -> bool:
+    """Updates a single document with the given objectid."""
+
+    check_collection(collection_name)
+    db_collection = db[collection_name]
+    update_status = mongo.update_single_document(db_collection, oid, document_obj)
+    return update_status

@@ -1,4 +1,4 @@
-import pymongo
+from typing import Tuple
 from flask import Flask, abort, jsonify, request
 from flask.wrappers import Response
 from flask_cors import CORS
@@ -21,11 +21,11 @@ def get_collection(collection) -> Response:
 
 
 @app.post("/api/<collection>")
-def create_document_in_collection(collection) -> Response:
+def create_document_in_collection(collection) -> Tuple[Response, int]:
     try:
         document = request.json
         document_id = services.create_document(db, collection, document)
-        return jsonify(document_id)
+        return jsonify(document_id), 201
     except ValueError as e:
         abort(404, description=e)
 
@@ -39,6 +39,15 @@ def get_document(collection, oid) -> Response:
         abort(404, description=e)
 
 
-# TODO: update document
+@app.put("/api/<collection>/<oid>")
+def update_document_in_collection(collection, oid) -> Tuple[Response, int]:
+    try:
+        document = request.json
+        services.update_document(db, collection, oid, document)
+        return jsonify(), 204
+    except ValueError as e:
+        abort(404, description=e)
+
+
 # TODO: delete document
 # TODO: collection filtering

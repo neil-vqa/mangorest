@@ -1,7 +1,6 @@
 from typing import Dict, List, Optional
 
 import pymongo
-from bson import objectid
 from bson.objectid import ObjectId
 from pymongo.collection import Collection
 from pymongo.cursor import Cursor
@@ -52,7 +51,17 @@ def insert_multiple_documents(
 
 def query_document(db_collection: Collection, oid: str) -> Dict:
     try:
-        document = db_collection.find_one({"_id": objectid.ObjectId(oid)})
+        document = db_collection.find_one({"_id": ObjectId(oid)})
         return document
+    except Exception:
+        raise
+
+
+def update_single_document(
+    db_collection: Collection, oid: str, document_obj: Dict
+) -> bool:
+    try:
+        db_collection.update_one({"_id": ObjectId(oid)}, {"$set": document_obj})
+        return True
     except Exception:
         raise
