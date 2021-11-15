@@ -1,9 +1,10 @@
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import pymongo
 from bson import objectid
 from bson.objectid import ObjectId
 from pymongo.collection import Collection
+from pymongo.cursor import Cursor
 from pymongo.database import Database
 from pymongo.errors import AutoReconnect, ConnectionFailure
 
@@ -23,7 +24,7 @@ def connect() -> Database:
         )
 
 
-def query_collection(db_collection: Collection, query: Optional[Dict]) -> Collection:
+def query_collection(db_collection: Collection, query: Optional[Dict]) -> Cursor:
     try:
         result = db_collection.find(query)
         return result
@@ -49,7 +50,7 @@ def insert_multiple_documents(
         raise
 
 
-def query_document(db_collection: Collection, oid: str) -> Any:
+def query_document(db_collection: Collection, oid: str) -> Dict:
     try:
         document = db_collection.find_one({"_id": objectid.ObjectId(oid)})
         return document

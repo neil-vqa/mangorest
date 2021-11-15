@@ -9,6 +9,8 @@ collection_set = set(config.COLLECTION.split(","))
 
 
 def parse_object_id(document):
+    """Converts ObjectId to be serializable."""
+
     document["_id"] = json_util.dumps(document["_id"])
     return document
 
@@ -18,11 +20,15 @@ def check_collection(collection_name):
         raise ValueError("Collection not set to be exposed to REST clients.")
 
 
-def fetch_collection(db: Database, collection_name: Any, query: Optional[Dict]):
-    """
+def fetch_collection(
+    db: Database, collection_name: Any, query: Optional[Dict]
+) -> List[Dict]:
+    """Fetches documents of the specified collection.
+
     TODO: Build the filter argument from query,
     then pass to mongo.query_collection()
     """
+
     check_collection(collection_name)
     db_collection = db[collection_name]
     query_result = mongo.query_collection(db_collection, query)
@@ -31,6 +37,8 @@ def fetch_collection(db: Database, collection_name: Any, query: Optional[Dict]):
 
 
 def create_document(db: Database, collection_name: Any, document_obj: Any):
+    """Inserts a single or multiple  documents. Returns the objectid."""
+
     check_collection(collection_name)
     db_collection = db[collection_name]
 
@@ -42,7 +50,9 @@ def create_document(db: Database, collection_name: Any, document_obj: Any):
         return [json_util.dumps(item) for item in document_oids]
 
 
-def fetch_document(db: Database, collection_name: Any, oid: str):
+def fetch_document(db: Database, collection_name: Any, oid: str) -> Dict:
+    """Fetches the document with the given objectid."""
+
     check_collection(collection_name)
     db_collection = db[collection_name]
     query_result = mongo.query_document(db_collection, oid)

@@ -8,7 +8,7 @@ from mangorest import mongo, services
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-db = mongo.connect()
+db = mongo.connect()  # The mongodb database configured to be exposed to REST clients
 
 
 @app.get("/api/<collection>")
