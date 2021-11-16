@@ -1,5 +1,6 @@
+from typing import Dict, List, NamedTuple
+
 import pytest
-from pymongo.database import Database
 
 import mangorest.mongo as mongo
 import mangorest.services as services
@@ -12,48 +13,132 @@ def client():
         yield client
 
 
-def test_successful_db_connection():
-    db = mongo.connect()
-    assert isinstance(db, Database)
+@pytest.fixture
+def db_connection():
+    return mongo.connect()
 
 
-def test_get_collection_endpoint(client):
-    resp = client.get("/api/rocket_engines")
-    resp_data = resp.json
-    assert isinstance(resp_data, list)
+@pytest.fixture
+def test_args():
+    class TestingArguments(NamedTuple):
+        collection_name: str
+        query_empty: Dict
+        single_doc: Dict
+        multiple_doc: List
+        updated_doc: Dict
+        api_url: str
 
+    doc = {
+        "country": "USSR",
+        "manufacturer": "NPO Energomash",
+        "name": "RD-180",
+        "thrust_to_weight_ratio": 90,
+    }
 
-def test_create_document_endpoint(client):
-    resp = client.post(
-        "/api/rocket_engines",
-        json={
-            "country": "USSR",
-            "manufacturer": "NPO Energomash",
-            "name": "RD-180",
-            "thrust_to_weight_ratio": 90,
+    doc_list = [
+        {
+            "country": "North Pole",
+            "manufacturer": "Energomasher",
+            "name": "RD-360",
+            "thrust_to_weight_ratio": 120,
         },
+        {
+            "country": "Antarctica",
+            "manufacturer": "Energomasher",
+            "name": "RD-270",
+            "thrust_to_weight_ratio": 110,
+        },
+    ]
+
+    doc_update = {
+        "country": "Antarctica",
+        "manufacturer": "Energomasher Inc.",
+        "name": "RD-270",
+        "thrust_to_weight_ratio": 150,
+    }
+
+    args = TestingArguments(
+        "rocket_engines", {}, doc, doc_list, doc_update, "/api/rocket_engines"
+    )
+    return args
+
+
+@pytest.fixture
+def oid_query(db_connection, test_args):
+    doc = db_connection[test_args.collection_name].find_one({"country": "Antarctica"})
+    parsed_doc = services.parse_object_id(doc)
+
+    return parsed_doc["_id"]["$oid"]
+
+
+# ============================================================
+# Testing services
+# ============================================================
+
+
+def test_create_single_document(db_connection, test_args):
+    result = services.create_document(
+        db_connection, test_args.collection_name, test_args.single_doc
+    )
+    assert "$oid" in result["_id"]
+
+
+def test_create_multiple_documents(db_connection, test_args):
+    result = services.create_document(
+        db_connection, test_args.collection_name, test_args.multiple_doc
+    )
+    assert len(result) >= 1
+    assert "$oid" in result[0]["_id"]
+
+
+def test_fetch_collection(db_connection, test_args):
+    result = services.fetch_collection(
+        db_connection, test_args.collection_name, test_args.query_empty
+    )
+    assert len(result) >= 1
+
+
+def test_fetch_document(db_connection, test_args, oid_query):
+    result = services.fetch_document(
+        db_connection, test_args.collection_name, oid_query
+    )
+    assert "$oid" in result["_id"]
+
+
+def test_update_document(db_connection, test_args, oid_query):
+    result = services.update_document(
+        db_connection, test_args.collection_name, oid_query, test_args.updated_doc
+    )
+    assert result == True
+
+
+# ============================================================
+# Testing endpoints
+# ============================================================
+
+
+def test_create_document_endpoint(client, test_args):
+    resp = client.post(
+        test_args.api_url,
+        json=test_args.single_doc,
     )
     assert resp.status == "201 CREATED"
 
 
-def test_get_document_endpoint(client):
-    req_oid = "619124108e286c717d5636dd"
-    resp = client.get(f"/api/rocket_engines/{req_oid}")
+def test_get_collection_endpoint(client, test_args):
+    resp = client.get(test_args.api_url)
+    resp_data = resp.json
+    assert isinstance(resp_data, list)
+
+
+def test_get_document_endpoint(client, test_args, oid_query):
+    resp = client.get(f"{ test_args.api_url}/{oid_query}")
     resp_data = resp.json
     print(resp_data)
     oid = resp_data["_id"]["$oid"]
-    assert req_oid == oid
+    assert oid_query == oid
 
 
-def test_update_document_endpoint(client):
-    req_oid = "619124108e286c717d5636dd"
-    resp = client.put(
-        f"/api/rocket_engines/{req_oid}",
-        json={
-            "country": "Russia",
-            "manufacturer": "NPO Energomash",
-            "name": "RD-180",
-            "thrust_to_weight_ratio": 90,
-        },
-    )
+def test_update_document_endpoint(client, test_args, oid_query):
+    resp = client.put(f"{ test_args.api_url}/{oid_query}", json=test_args.updated_doc)
     assert resp.status == "204 NO CONTENT"
