@@ -58,7 +58,7 @@ def test_args():
     }
 
     args = TestingArguments(
-        "rocket_engines", {}, doc, doc_list, doc_update, "/api/rocket_engines"
+        "rocket_engines", {}, doc, doc_list, doc_update, "/api/rockets"
     )
     return args
 
