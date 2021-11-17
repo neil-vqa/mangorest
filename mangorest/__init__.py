@@ -1,3 +1,7 @@
 __version__ = "0.1.0"
 
-from .app import app
+from flask import Flask
+
+app = Flask(__name__)
+
+import mangorest.views

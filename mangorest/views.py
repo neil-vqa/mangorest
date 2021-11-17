@@ -1,14 +1,13 @@
 from typing import Tuple
 
 import bson
-from flask import Flask, abort, jsonify, request
+from flask import abort, jsonify, request
 from flask.wrappers import Response
 from flask_cors import CORS
 from pymongo.errors import DuplicateKeyError
 
-from mangorest import exceptions, mongo, services
+from mangorest import app, exceptions, mongo, services
 
-app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 db = mongo.connect()  # The mongodb database configured to be exposed to REST clients
