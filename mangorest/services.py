@@ -7,7 +7,13 @@ from pymongo.database import Database
 
 from mangorest import config, exceptions, mongo
 
-collection_set = set(config.COLLECTION.split(","))
+# collection_set = set(config.COLLECTION.split(","))
+resource_to_collection_list = config.COLLECTION.split(",")
+
+mapper = config.MangoConfigurator(resource_to_collection_list)
+mapper.resource_collection_map_parser()
+endpoints = mapper.resource_name_map
+collection_set = mapper.collection_set
 
 
 def parse_object_id(document):
@@ -20,6 +26,12 @@ def parse_object_id(document):
         oid = json.loads(json_util.dumps(document))
         oid_dict = {"_id": oid}
         return oid_dict
+
+
+def check_resource_name(resource_name):
+    if not resource_name in endpoints:
+        raise ValueError("Invalid API endpoint.")
+    return endpoints[resource_name]
 
 
 def check_collection(collection_name):
