@@ -50,5 +50,17 @@ def update_document_in_collection(collection, oid) -> Tuple[Response, int]:
         abort(404, description=e)
 
 
+@app.delete("/api/<collection>/<oid>")
+def delete_document_in_collection(collection, oid) -> Tuple[Response, int]:
+    try:
+        services.delete_document(db, collection, oid)
+        return jsonify(), 204
+    except ValueError as e:
+        abort(404, description=e)
+
+
 # TODO: delete document
+# TODO: endpoint-collection mapping
 # TODO: collection filtering
+# TODO: jwt auth
+# TODO: cli

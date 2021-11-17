@@ -65,3 +65,11 @@ def update_single_document(
         return True
     except Exception:
         raise
+
+
+def delete_single_document(db_collection: Collection, oid: str) -> bool:
+    try:
+        db_collection.delete_one({"_id": ObjectId(oid)})
+        return True
+    except Exception:
+        raise

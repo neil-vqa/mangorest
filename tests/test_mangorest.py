@@ -112,6 +112,13 @@ def test_update_document(db_connection, test_args, oid_query):
     assert result == True
 
 
+def test_delete_document(db_connection, test_args, oid_query):
+    result = services.delete_document(
+        db_connection, test_args.collection_name, oid_query
+    )
+    assert result == True
+
+
 # ============================================================
 # Testing endpoints
 # ============================================================
@@ -141,4 +148,9 @@ def test_get_document_endpoint(client, test_args, oid_query):
 
 def test_update_document_endpoint(client, test_args, oid_query):
     resp = client.put(f"{ test_args.api_url}/{oid_query}", json=test_args.updated_doc)
+    assert resp.status == "204 NO CONTENT"
+
+
+def test_delete_document_endpoint(client, test_args, oid_query):
+    resp = client.delete(f"{test_args.api_url}/{oid_query}")
     assert resp.status == "204 NO CONTENT"

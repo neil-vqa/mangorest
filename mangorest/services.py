@@ -75,3 +75,12 @@ def update_document(
     db_collection = db[collection_name]
     update_status = mongo.update_single_document(db_collection, oid, document_obj)
     return update_status
+
+
+def delete_document(db: Database, collection_name: Any, oid: str) -> bool:
+    """Deletes a single document with the given objectid."""
+
+    check_collection(collection_name)
+    db_collection = db[collection_name]
+    delete_status = mongo.delete_single_document(db_collection, oid)
+    return delete_status
