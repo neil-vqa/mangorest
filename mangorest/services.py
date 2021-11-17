@@ -5,13 +5,14 @@ from bson import json_util
 from bson.objectid import ObjectId
 from pymongo.database import Database
 
-from mangorest import config, mongo
+from mangorest import config, exceptions, mongo
 
 collection_set = set(config.COLLECTION.split(","))
 
 
 def parse_object_id(document):
     """Converts ObjectId to be serializable."""
+
     if isinstance(document, Dict):
         document["_id"] = json.loads(json_util.dumps(document["_id"]))
         return document
@@ -23,17 +24,15 @@ def parse_object_id(document):
 
 def check_collection(collection_name):
     if not collection_name in collection_set:
-        raise ValueError("Collection not set to be exposed to REST clients.")
+        raise exceptions.CollectionNotFoundError(
+            "Collection not set to be exposed to REST clients."
+        )
 
 
 def fetch_collection(
     db: Database, collection_name: Any, query: Optional[Dict]
 ) -> List[Dict]:
-    """Fetches documents of the specified collection.
-
-    TODO: Build the filter argument from query,
-    then pass to mongo.query_collection()
-    """
+    """Fetches documents of the specified collection."""
 
     check_collection(collection_name)
     db_collection = db[collection_name]
@@ -62,6 +61,12 @@ def fetch_document(db: Database, collection_name: Any, oid: str) -> Dict:
     check_collection(collection_name)
     db_collection = db[collection_name]
     query_result = mongo.query_document(db_collection, oid)
+
+    if query_result is None:
+        raise exceptions.DocumentNotFoundError(
+            f"Document with ObjectId {oid} not found."
+        )
+
     parsed_document = parse_object_id(query_result)
     return parsed_document
 
@@ -73,8 +78,14 @@ def update_document(
 
     check_collection(collection_name)
     db_collection = db[collection_name]
-    update_status = mongo.update_single_document(db_collection, oid, document_obj)
-    return update_status
+    update_result = mongo.update_single_document(db_collection, oid, document_obj)
+
+    if update_result is None:
+        raise exceptions.DocumentNotFoundError(
+            f"No UPDATE performed. Document with ObjectId {oid} not found."
+        )
+
+    return True
 
 
 def delete_document(db: Database, collection_name: Any, oid: str) -> bool:
@@ -82,5 +93,11 @@ def delete_document(db: Database, collection_name: Any, oid: str) -> bool:
 
     check_collection(collection_name)
     db_collection = db[collection_name]
-    delete_status = mongo.delete_single_document(db_collection, oid)
-    return delete_status
+    delete_result = mongo.delete_single_document(db_collection, oid)
+
+    if delete_result is None:
+        raise exceptions.DocumentNotFoundError(
+            f"No DELETE performed. Document with ObjectId {oid} not found."
+        )
+
+    return True

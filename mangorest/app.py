@@ -1,10 +1,12 @@
 from typing import Tuple
 
+import bson
 from flask import Flask, abort, jsonify, request
 from flask.wrappers import Response
 from flask_cors import CORS
+from pymongo.errors import DuplicateKeyError
 
-from mangorest import mongo, services
+from mangorest import exceptions, mongo, services
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -17,7 +19,7 @@ def get_collection(collection) -> Response:
     try:
         documents = services.fetch_collection(db, collection, request.args)
         return jsonify(documents)
-    except ValueError as e:
+    except exceptions.CollectionNotFoundError as e:
         abort(404, description=e)
 
 
@@ -27,7 +29,9 @@ def create_document_in_collection(collection) -> Tuple[Response, int]:
         document = request.json
         document_id = services.create_document(db, collection, document)
         return jsonify(document_id), 201
-    except ValueError as e:
+    except DuplicateKeyError as e:
+        abort(400, description=e)
+    except exceptions.CollectionNotFoundError as e:
         abort(404, description=e)
 
 
@@ -36,7 +40,11 @@ def get_document(collection, oid) -> Response:
     try:
         document = services.fetch_document(db, collection, oid)
         return jsonify(document)
-    except ValueError as e:
+    except exceptions.DocumentNotFoundError as e:
+        abort(404, description=e)
+    except bson.errors.InvalidId as e:
+        abort(400, description=e)
+    except exceptions.CollectionNotFoundError as e:
         abort(404, description=e)
 
 
@@ -46,7 +54,13 @@ def update_document_in_collection(collection, oid) -> Tuple[Response, int]:
         document = request.json
         services.update_document(db, collection, oid, document)
         return jsonify(), 204
-    except ValueError as e:
+    except exceptions.DocumentNotFoundError as e:
+        abort(404, description=e)
+    except bson.errors.InvalidId as e:
+        abort(400, description=e)
+    except DuplicateKeyError as e:
+        abort(400, description=e)
+    except exceptions.CollectionNotFoundError as e:
         abort(404, description=e)
 
 
@@ -55,11 +69,14 @@ def delete_document_in_collection(collection, oid) -> Tuple[Response, int]:
     try:
         services.delete_document(db, collection, oid)
         return jsonify(), 204
-    except ValueError as e:
+    except exceptions.DocumentNotFoundError as e:
+        abort(404, description=e)
+    except bson.errors.InvalidId as e:
+        abort(400, description=e)
+    except exceptions.CollectionNotFoundError as e:
         abort(404, description=e)
 
 
-# TODO: delete document
 # TODO: endpoint-collection mapping
 # TODO: collection filtering
 # TODO: jwt auth
