@@ -13,32 +13,41 @@ cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 db = mongo.connect()  # The mongodb database configured to be exposed to REST clients
 
 
-@app.get("/api/<collection>")
-def get_collection(collection) -> Response:
+@app.get("/api/<resource>")
+def get_collection(resource) -> Response:
     try:
-        documents = services.fetch_collection(db, collection, request.args)
+        collection_name = services.check_resource_name(resource)
+        documents = services.fetch_collection(db, collection_name, request.args)
         return jsonify(documents)
+    except exceptions.ResourceNameNotFoundError as e:
+        abort(404, description=e)
     except exceptions.CollectionNotFoundError as e:
         abort(404, description=e)
 
 
-@app.post("/api/<collection>")
-def create_document_in_collection(collection) -> Tuple[Response, int]:
+@app.post("/api/<resource>")
+def create_document_in_collection(resource) -> Tuple[Response, int]:
     try:
         document = request.json
-        document_id = services.create_document(db, collection, document)
+        collection_name = services.check_resource_name(resource)
+        document_id = services.create_document(db, collection_name, document)
         return jsonify(document_id), 201
+    except exceptions.ResourceNameNotFoundError as e:
+        abort(404, description=e)
     except DuplicateKeyError as e:
         abort(400, description=e)
     except exceptions.CollectionNotFoundError as e:
         abort(404, description=e)
 
 
-@app.get("/api/<collection>/<oid>")
-def get_document(collection, oid) -> Response:
+@app.get("/api/<resource>/<oid>")
+def get_document(resource, oid) -> Response:
     try:
-        document = services.fetch_document(db, collection, oid)
+        collection_name = services.check_resource_name(resource)
+        document = services.fetch_document(db, collection_name, oid)
         return jsonify(document)
+    except exceptions.ResourceNameNotFoundError as e:
+        abort(404, description=e)
     except exceptions.DocumentNotFoundError as e:
         abort(404, description=e)
     except bson.errors.InvalidId as e:
@@ -47,12 +56,15 @@ def get_document(collection, oid) -> Response:
         abort(404, description=e)
 
 
-@app.put("/api/<collection>/<oid>")
-def update_document_in_collection(collection, oid) -> Tuple[Response, int]:
+@app.put("/api/<resource>/<oid>")
+def update_document_in_collection(resource, oid) -> Tuple[Response, int]:
     try:
         document = request.json
-        services.update_document(db, collection, oid, document)
+        collection_name = services.check_resource_name(resource)
+        services.update_document(db, collection_name, oid, document)
         return jsonify(), 204
+    except exceptions.ResourceNameNotFoundError as e:
+        abort(404, description=e)
     except exceptions.DocumentNotFoundError as e:
         abort(404, description=e)
     except bson.errors.InvalidId as e:
@@ -63,11 +75,14 @@ def update_document_in_collection(collection, oid) -> Tuple[Response, int]:
         abort(404, description=e)
 
 
-@app.delete("/api/<collection>/<oid>")
-def delete_document_in_collection(collection, oid) -> Tuple[Response, int]:
+@app.delete("/api/<resource>/<oid>")
+def delete_document_in_collection(resource, oid) -> Tuple[Response, int]:
     try:
-        services.delete_document(db, collection, oid)
+        collection_name = services.check_resource_name(resource)
+        services.delete_document(db, collection_name, oid)
         return jsonify(), 204
+    except exceptions.ResourceNameNotFoundError as e:
+        abort(404, description=e)
     except exceptions.DocumentNotFoundError as e:
         abort(404, description=e)
     except bson.errors.InvalidId as e:
