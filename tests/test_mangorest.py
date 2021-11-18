@@ -53,19 +53,17 @@ def test_args():
     doc_update = {
         "country": "Antarctica",
         "manufacturer": "Energomasher Inc.",
-        "name": "RD-270",
+        "name": "RD-180",
         "thrust_to_weight_ratio": 150,
     }
 
-    args = TestingArguments(
-        "rocket_engines", {}, doc, doc_list, doc_update, "/api/rockets"
-    )
+    args = TestingArguments("rocketeer", {}, doc, doc_list, doc_update, "/api/rockets")
     return args
 
 
 @pytest.fixture
 def oid_query(db_connection, test_args):
-    doc = db_connection[test_args.collection_name].find_one({"country": "Antarctica"})
+    doc = db_connection[test_args.collection_name].find_one({"name": "RD-180"})
     parsed_doc = services.parse_object_id(doc)
 
     return parsed_doc["_id"]["$oid"]
@@ -141,7 +139,6 @@ def test_get_collection_endpoint(client, test_args):
 def test_get_document_endpoint(client, test_args, oid_query):
     resp = client.get(f"{ test_args.api_url}/{oid_query}")
     resp_data = resp.json
-    print(resp_data)
     oid = resp_data["_id"]["$oid"]
     assert oid_query == oid
 
