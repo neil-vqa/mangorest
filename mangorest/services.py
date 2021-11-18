@@ -7,10 +7,12 @@ from pymongo.database import Database
 
 from mangorest import config, exceptions, mongo
 
-# collection_set = set(config.COLLECTION.split(","))
-resource_to_collection_list = config.COLLECTION.split(",")
+if config.COLLECTION == "*":
+    mapper = config.MangoConfigurator.from_unmapped_all_collections()
+else:
+    resource_to_collection_list = config.COLLECTION.split(",")
+    mapper = config.MangoConfigurator(resource_to_collection_list)
 
-mapper = config.MangoConfigurator(resource_to_collection_list)
 mapper.resource_collection_map_parser()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set

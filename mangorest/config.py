@@ -1,9 +1,13 @@
 import os
 from typing import Dict, List
 
+import pymongo
+
+from mangorest import mongo
+
 MONGODB_URI = os.environ["MONGODB_URI"]
 DB_SCHEMA = os.environ["DB_SCHEMA"]
-COLLECTION = os.environ["COLLECTION"]
+COLLECTION = os.environ["COLLECTIONS"]
 
 
 class MangoConfigurator:
@@ -21,3 +25,12 @@ class MangoConfigurator:
     @property
     def collection_set(self):
         return set(self.resource_name_map.values())
+
+    @classmethod
+    def from_unmapped_all_collections(cls):
+        client = pymongo.MongoClient(MONGODB_URI)
+        database = client[DB_SCHEMA]
+        collections_list = database.list_collection_names()
+        client.close()
+        resource_collection_list = [f"{item}:{item}" for item in collections_list]
+        return cls(resource_collection_list)
