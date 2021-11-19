@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional
 import re
+import datetime
 
 from bson import json_util
 from bson.objectid import ObjectId
@@ -44,19 +45,38 @@ def check_collection(collection_name):
         )
 
 
-def map_to_query_selectors(query_params: Dict) -> Dict:
+def cast_query_types(query_type, query_value) -> Any:
+    supported_types = {
+        "int": int,
+        "float": float,
+        "bool": bool,
+        "str": str,
+        "date": datetime.date,
+        "time": datetime.time,
+        "datetime": datetime.datetime,
+        "timedelta": datetime.timedelta,
+    }
+
+    return supported_types[query_type](query_value)
+
+
+def map_to_query_operator(query_params: Dict) -> Dict:
     """
-    Query string escapes '$' followed by selector name and "." (dot) to identify the selector.
+    Query string must escape '$' followed by operator name and "." (dot) to identify the operator.
+    Example:
+    /api/rockets?thrust_to_weight_ratio=\$lt[int].70
 
     Return in the form {"field": "value"} or {"field":{"$selector":"value"}}
     """
-    selector_pattern = r"(^\$\w+)\.(\w+)"
+
+    operator_pattern = r"(^\$\w+)\[(\w+)\]\.(\w+)"
     filter_dict = {}
 
     for key, value in query_params.items():
-        match = re.search(selector_pattern, value)
+        match = re.search(operator_pattern, value)
         if match:
-            filter_dict[key] = {match.group(1): match.group(2)}
+            typed_query_value = cast_query_types(match.group(2), match.group(3))
+            filter_dict[key] = {match.group(1): typed_query_value}
         else:
             filter_dict[key] = value
 
