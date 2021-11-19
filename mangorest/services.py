@@ -1,5 +1,6 @@
 import json
 from typing import Any, Dict, List, Optional
+import re
 
 from bson import json_util
 from bson.objectid import ObjectId
@@ -41,6 +42,25 @@ def check_collection(collection_name):
         raise exceptions.CollectionNotFoundError(
             "Collection not set to be exposed to REST clients."
         )
+
+
+def map_to_query_selectors(query_params: Dict) -> Dict:
+    """
+    Query string escapes '$' followed by selector name and "." (dot) to identify the selector.
+
+    Return in the form {"field": "value"} or {"field":{"$selector":"value"}}
+    """
+    selector_pattern = r"(^\$\w+)\.(\w+)"
+    filter_dict = {}
+
+    for key, value in query_params.items():
+        match = re.search(selector_pattern, value)
+        if match:
+            filter_dict[key] = {match.group(1): match.group(2)}
+        else:
+            filter_dict[key] = value
+
+    return filter_dict
 
 
 def fetch_collection(
