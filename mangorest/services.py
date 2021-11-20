@@ -1,7 +1,7 @@
-import json
-from typing import Any, Dict, List, Optional
-import re
 import datetime
+import json
+import re
+from typing import Any, Dict, List, Optional
 
 from bson import json_util
 from bson.objectid import ObjectId
@@ -19,14 +19,21 @@ mapper.resource_collection_map_parser()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
+# TODO: collection filtering, projection
+# TODO: collection ordering, limits, pagination, counting
+# TODO: custom functions for complex collection filtering
+# TODO: logging
+# TODO: jwt auth
+# TODO: cli (user creation)
+
 
 def parse_object_id(document):
     """Converts ObjectId to be serializable."""
 
-    if isinstance(document, Dict):
+    if type(document) is dict:
         document["_id"] = json.loads(json_util.dumps(document["_id"]))
         return document
-    elif isinstance(document, ObjectId):
+    elif type(document) is ObjectId:
         oid = json.loads(json_util.dumps(document))
         oid_dict = {"_id": oid}
         return oid_dict
@@ -55,19 +62,23 @@ def cast_query_types(query_type, query_value) -> Any:
         "time": datetime.time,
         "datetime": datetime.datetime,
         "timedelta": datetime.timedelta,
+        "list": list,
     }
 
     return supported_types[query_type](query_value)
 
 
 def map_to_query_operator(query_params: Dict) -> Dict:
-    """
-    Query string must escape '$' followed by operator name and "." (dot) to identify the operator.
-    Example:
-    /api/rockets?thrust_to_weight_ratio=\$lt[int].70
+    """Parse and convert query string to a form accepted by pymongo.
 
-    Return in the form {"field": "value"} or {"field":{"$selector":"value"}}
+    Return in the form {"field": "value"} or {"field":{"$operator":"value"}}
     """
+
+    # For Comparison Query Operators:
+    # Query string must escape "\$" followed by operator name with type info
+    # of the field then a "." (dot) to identify the operator.
+    # Example: /api/rockets?thrust_to_weight_ratio=\$lt[int].70
+    # Referrence: (https://docs.mongodb.com/manual/reference/operator/query-comparison/)
 
     operator_pattern = r"(^\$\w+)\[(\w+)\]\.(\w+)"
     filter_dict = {}
@@ -101,10 +112,10 @@ def create_document(db: Database, collection_name: Any, document_obj: Any):
     check_collection(collection_name)
     db_collection = db[collection_name]
 
-    if isinstance(document_obj, Dict):
+    if type(document_obj) is dict:
         document_oid = mongo.insert_single_document(db_collection, document_obj)
         return parse_object_id(document_oid)
-    elif isinstance(document_obj, List):
+    elif type(document_obj) is list:
         document_oids = mongo.insert_multiple_documents(db_collection, document_obj)
         return [parse_object_id(item) for item in document_oids]
 
