@@ -90,8 +90,3 @@ def delete_document_in_collection(resource, oid) -> Tuple[Response, int]:
         abort(400, description=e)
     except exceptions.CollectionNotFoundError as e:
         abort(404, description=e)
-
-
-# TODO: collection filtering
-# TODO: jwt auth
-# TODO: cli

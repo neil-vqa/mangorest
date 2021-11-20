@@ -68,11 +68,23 @@ def cast_query_types(query_type, query_value) -> Any:
     return supported_types[query_type](query_value)
 
 
+def and_or_query_operator(query):
+    pass
+
+
 def map_to_query_operator(query_params: Dict) -> Dict:
     """Parse and convert query string to a form accepted by pymongo.
 
     Return in the form {"field": "value"} or {"field":{"$operator":"value"}}
     """
+
+    filter_dict = {}  # dict representing as SON object
+
+    # Pattern for when matching directly non-string values:
+    # After the "=", type info of the field must be provided.
+    # Example: /api/rockets?is_active=[bool].true
+
+    equality_pattern = r"^\[(\w+)\]\.(\w+)"
 
     # For Comparison Query Operators:
     # Query string must escape "\$" followed by operator name with type info
@@ -80,14 +92,27 @@ def map_to_query_operator(query_params: Dict) -> Dict:
     # Example: /api/rockets?thrust_to_weight_ratio=\$lt[int].70
     # Referrence: (https://docs.mongodb.com/manual/reference/operator/query-comparison/)
 
-    operator_pattern = r"(^\$\w+)\[(\w+)\]\.(\w+)"
-    filter_dict = {}
+    comparison_operator_pattern = r"(^\$\w+)\[(\w+)\]\.(\w+)"
 
     for key, value in query_params.items():
-        match = re.search(operator_pattern, value)
-        if match:
-            typed_query_value = cast_query_types(match.group(2), match.group(3))
-            filter_dict[key] = {match.group(1): typed_query_value}
+        if key == "and" or key == "or":
+            and_or_expressions_list = and_or_query_operator(value)
+            logical_operator = f"${key}"
+            filter_dict[logical_operator] = and_or_expressions_list
+
+        equality_match = re.search(equality_pattern, value)
+        comparison_match = re.search(comparison_operator_pattern, value)
+
+        if equality_match:
+            typed_query_value = cast_query_types(
+                equality_match.group(1), equality_match.group(2)
+            )
+            filter_dict[key] = typed_query_value
+        elif comparison_match:
+            typed_query_value = cast_query_types(
+                comparison_match.group(2), comparison_match.group(3)
+            )
+            filter_dict[key] = {comparison_match.group(1): typed_query_value}
         else:
             filter_dict[key] = value
 
