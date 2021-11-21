@@ -6,7 +6,7 @@ import pymongo
 from mangorest import mongo
 
 MONGODB_URI = os.environ["MONGODB_URI"]
-DB_SCHEMA = os.environ["DB_SCHEMA"]
+DATABASE = os.environ["DATABASE"]
 COLLECTION = os.environ["COLLECTIONS"]
 
 
@@ -29,7 +29,7 @@ class MangoConfigurator:
     @classmethod
     def from_unmapped_all_collections(cls):
         client = pymongo.MongoClient(MONGODB_URI)
-        database = client[DB_SCHEMA]
+        database = client[DATABASE]
         collections_list = database.list_collection_names()
         client.close()
         resource_collection_list = [f"{item}:{item}" for item in collections_list]

@@ -19,11 +19,11 @@ from mangorest import config
 def connect() -> Database:
     try:
         client = pymongo.MongoClient(config.MONGODB_URI)
-        database = client[config.DB_SCHEMA]
+        database = client[config.DATABASE]
         return database
     except ConfigurationError:
         raise ConfigurationError(
-            "Incorrectly configured. Please check your MONGODB_URI or DB_SCHEMA config."
+            "Incorrectly configured. Please check your MONGODB_URI or DATABASE config."
         )
     except ConnectionFailure:
         raise ConnectionFailure("Connecting to MongoDB failed.")
