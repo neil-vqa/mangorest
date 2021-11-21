@@ -21,7 +21,6 @@ endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
 # TODO: collection limits, pagination, counting
-# TODO: custom functions for complex collection filtering
 # TODO: logging
 # TODO: jwt auth
 # TODO: cli (user creation)
@@ -62,9 +61,23 @@ def cast_query_types(query_type, query_value) -> Any:
         "time": datetime.time,
         "datetime": datetime.datetime,
         "timedelta": datetime.timedelta,
-        "list": list,
     }
 
+    # used for enforcing the type of the list items
+    list_variant = {
+        "list-int": int,
+        "list-float": float,
+        "list-str": str,
+        "list-date": datetime.date,
+        "list-time": datetime.time,
+        "list-datetime": datetime.datetime,
+        "list-timedelta": datetime.timedelta,
+    }
+
+    if query_type in list_variant:
+        parsed_query_value = query_value[1:-1].split(",")
+        query_value = [list_variant[query_type](item) for item in parsed_query_value]
+        return query_value
     return supported_types[query_type](query_value)
 
 
@@ -135,7 +148,7 @@ def map_to_query_operator(query_params: Dict) -> Dict[Any, Any]:
     # Example: /api/rockets?thrust_to_weight_ratio=\$lt[int].70
     # Referrence: https://docs.mongodb.com/manual/reference/operator/query-comparison/
 
-    comparison_operator_pattern = r"(^\$\w+)\[(\w+)\]\.(.+)"
+    comparison_operator_pattern = r"(^\$\w+)\[(.+)\]\.(.+)"
 
     for key, value in query_params.items():
         # regex matching
