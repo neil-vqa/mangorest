@@ -91,7 +91,11 @@ def test_create_multiple_documents(db_connection, test_args):
 
 def test_fetch_collection(db_connection, test_args):
     result = services.fetch_collection(
-        db_connection, test_args.collection_name, test_args.query_empty
+        db_connection,
+        test_args.collection_name,
+        test_args.query_empty,
+        projection=None,
+        sort=None,
     )
     assert len(result) >= 1
 
