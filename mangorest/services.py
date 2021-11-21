@@ -19,7 +19,7 @@ mapper.resource_collection_map_parser()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
-# TODO: collection filtering, projection
+# TODO: collection projection
 # TODO: collection ordering, limits, pagination, counting
 # TODO: custom functions for complex collection filtering
 # TODO: logging
@@ -68,19 +68,62 @@ def cast_query_types(query_type, query_value) -> Any:
     return supported_types[query_type](query_value)
 
 
-def and_or_query_operator(query):
-    pass
+def parse_logical_query(query) -> List[Dict]:
+    """Parse and convert logical query string to the logical operator form accepted by pymongo.
+
+    Parser for Logical Query Operators, specifically 'and, or, nor' operators.
+    Reference: https://docs.mongodb.com/manual/reference/operator/query-logical/
+
+    Args:
+        query: A string that contains query expressions joined/disjoined by and/or enclosed with parentheses.
+
+            A single expression is stuctured as field name followed by an operator
+            with the field type info then the value, separated by "." (dots).
+            Example: thrust_to_weight_ratio.gt[int].70
+
+            Multiple expressions are separated by commas.
+            Example:  "(thrust_to_weight_ratio.gt[int].70,country.eq[str].North Pole,is_active.eq[bool].true)"
+
+    Returns:
+        A list of dicts representing as SON objects.
+    """
+
+    expressions_list: List[Dict] = []
+
+    logical_pattern = r"^\((.+)\)$"
+    expression_pattern = r"^(.+)\.(\w+)\[(.+)\]\.(.+)"
+
+    logical_match = re.search(logical_pattern, query)
+    if logical_match:
+        raw_expressions_list = logical_match.group(1).split(",")
+
+        for item in raw_expressions_list:
+            expression_match = re.search(expression_pattern, item)
+            field_name = expression_match.group(1)  # type: ignore
+            operator = expression_match.group(2)  # type: ignore
+            field_type = expression_match.group(3)  # type: ignore
+            field_value = expression_match.group(4)  # type: ignore
+            expression_dict = {
+                field_name: {f"${operator}": cast_query_types(field_type, field_value)}
+            }
+            expressions_list.append(expression_dict)
+
+    return expressions_list
 
 
-def map_to_query_operator(query_params: Dict) -> Dict:
+def map_to_query_operator(query_params: Dict) -> Dict[Any, Any]:
     """Parse and convert query string to a form accepted by pymongo.
 
-    Return in the form {"field": "value"} or {"field":{"$operator":"value"}}
+    Args:
+        query_params: An ImmutableMultiDict of the parsed query string.
+
+    Returns:
+        Dict (representing as SON object) in the form {"field": "value"} or {"field":{"$operator":"value"}}
     """
 
     filter_dict = {}  # dict representing as SON object
 
-    # Pattern for when matching directly non-string values:
+    # Pattern for when matching directly NON-STRING values:
     # After the "=", type info of the field must be provided.
     # Example: /api/rockets?is_active=[bool].true
 
@@ -90,29 +133,30 @@ def map_to_query_operator(query_params: Dict) -> Dict:
     # Query string must escape "\$" followed by operator name with type info
     # of the field then a "." (dot) to identify the operator.
     # Example: /api/rockets?thrust_to_weight_ratio=\$lt[int].70
-    # Referrence: (https://docs.mongodb.com/manual/reference/operator/query-comparison/)
+    # Referrence: https://docs.mongodb.com/manual/reference/operator/query-comparison/
 
-    comparison_operator_pattern = r"(^\$\w+)\[(\w+)\]\.(\w+)"
+    comparison_operator_pattern = r"(^\$\w+)\[(\w+)\]\.(.+)"
 
     for key, value in query_params.items():
-        if key == "and" or key == "or":
-            and_or_expressions_list = and_or_query_operator(value)
-            logical_operator = f"${key}"
-            filter_dict[logical_operator] = and_or_expressions_list
-
+        # regex matching
         equality_match = re.search(equality_pattern, value)
         comparison_match = re.search(comparison_operator_pattern, value)
 
         if equality_match:
             typed_query_value = cast_query_types(
-                equality_match.group(1), equality_match.group(2)
+                query_type=equality_match.group(1), query_value=equality_match.group(2)
             )
             filter_dict[key] = typed_query_value
         elif comparison_match:
             typed_query_value = cast_query_types(
-                comparison_match.group(2), comparison_match.group(3)
+                query_type=comparison_match.group(2),
+                query_value=comparison_match.group(3),
             )
-            filter_dict[key] = {comparison_match.group(1): typed_query_value}
+            filter_dict[key] = {comparison_match.group(1): typed_query_value}  # type: ignore
+        elif key == "and" or key == "or":
+            and_or_expressions_list = parse_logical_query(value)
+            logical_operator = f"${key}"
+            filter_dict[logical_operator] = and_or_expressions_list
         else:
             filter_dict[key] = value
 
