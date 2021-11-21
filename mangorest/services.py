@@ -91,7 +91,7 @@ def parse_logical_query(query) -> List[Dict]:
         query: A string that contains query expressions joined/disjoined by and/or enclosed with parentheses.
 
             A single expression is stuctured as field name followed by an operator
-            with the field type info then the value, separated by "." (dots).
+            with the field type hint then the value, separated by "." (dots).
             Example: thrust_to_weight_ratio.gt[int].70
 
             Multiple expressions are separated by commas.
@@ -128,7 +128,7 @@ def map_to_query_operator(query_params: Dict) -> Dict[Any, Any]:
     """Parse and convert query string to a form accepted by pymongo.
 
     Args:
-        query_params: An ImmutableMultiDict of the parsed query string.
+        query_params: A dictionary of the parsed query string.
 
     Returns:
         Dict (representing as SON object) in the form {"field": "value"} or {"field":{"$operator":"value"}}
@@ -137,18 +137,19 @@ def map_to_query_operator(query_params: Dict) -> Dict[Any, Any]:
     filter_dict = {}  # dict representing as SON object
 
     # Pattern for when matching directly NON-STRING values:
-    # After the "=", type info of the field must be provided.
+    # After the "=", type hint of the field must be provided.
     # Example: /api/rockets?is_active=[bool].true
 
     equality_pattern = r"^\[(\w+)\]\.(\w+)"
 
     # For Comparison Query Operators:
-    # Query string must escape "\$" followed by operator name with type info
+    # Query string must have the operator name with type hint
     # of the field then a "." (dot) to identify the operator.
-    # Example: /api/rockets?thrust_to_weight_ratio=\$lt[int].70
+    # This is then followed by the value.
+    # Example: /api/rockets?thrust_to_weight_ratio=lt[int].70
     # Referrence: https://docs.mongodb.com/manual/reference/operator/query-comparison/
 
-    comparison_operator_pattern = r"(^\$\w+)\[(.+)\]\.(.+)"
+    comparison_operator_pattern = r"(^\w+)\[(.+)\]\.(.+)"
 
     for key, value in query_params.items():
         # regex matching
@@ -165,7 +166,7 @@ def map_to_query_operator(query_params: Dict) -> Dict[Any, Any]:
                 query_type=comparison_match.group(2),
                 query_value=comparison_match.group(3),
             )
-            filter_dict[key] = {comparison_match.group(1): typed_query_value}  # type: ignore
+            filter_dict[key] = {f"${comparison_match.group(1)}": typed_query_value}
         elif key == "and" or key == "or":
             and_or_expressions_list = parse_logical_query(value)
             logical_operator = f"${key}"
