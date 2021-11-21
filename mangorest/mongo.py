@@ -33,9 +33,16 @@ def connect() -> Database:
         )
 
 
-def query_collection(db_collection: Collection, query: Optional[Dict]) -> Cursor:
+def query_collection(
+    db_collection: Collection,
+    query: Optional[Dict],
+    projection: Optional[List],
+    sort_options: Optional[List],
+) -> Cursor:
     try:
-        result = db_collection.find(query)
+        result = db_collection.find(
+            filter=query, projection=projection, sort=sort_options
+        )
         return result
     except Exception:
         raise

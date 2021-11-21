@@ -17,8 +17,20 @@ db = mongo.connect()  # The mongodb database configured to be exposed to REST cl
 def get_collection(resource) -> Response:
     try:
         collection_name = services.check_resource_name(resource)
-        query = services.map_to_query_operator(request.args)
-        documents = services.fetch_collection(db, collection_name, query)
+        request_args = request.args.copy()
+
+        projection = request_args.pop(
+            "_projection", None
+        )  # eg. _projection=name,thrust_to_weight_ratio
+
+        sort = request_args.pop(
+            "_sort", None
+        )  # eg. _sort=(name:ascending),(thrust_to_weight_ratio:descending)
+
+        query = services.map_to_query_operator(request_args)
+        documents = services.fetch_collection(
+            db, collection_name, query, projection, sort
+        )
         return jsonify(documents)
     except exceptions.ResourceNameNotFoundError as e:
         abort(404, description=e)

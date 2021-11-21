@@ -3,6 +3,7 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 
+import pymongo
 from bson import json_util
 from bson.objectid import ObjectId
 from pymongo.database import Database
@@ -19,8 +20,7 @@ mapper.resource_collection_map_parser()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
-# TODO: collection projection
-# TODO: collection ordering, limits, pagination, counting
+# TODO: collection limits, pagination, counting
 # TODO: custom functions for complex collection filtering
 # TODO: logging
 # TODO: jwt auth
@@ -163,14 +163,37 @@ def map_to_query_operator(query_params: Dict) -> Dict[Any, Any]:
     return filter_dict
 
 
+def parse_sort(sort: str) -> Any:
+    sort_pairs = sort.split(",")
+    sort_list: List = []
+    direction_table = {"ascending": pymongo.ASCENDING, "descending": pymongo.DESCENDING}
+
+    pair_pattern = r"^\((.+)\:(.+)\)$"
+    for pair in sort_pairs:
+        pair_match = re.search(pair_pattern, pair)
+        if pair_match:
+            pair_tuple = (pair_match.group(1), direction_table[pair_match.group(2)])
+            sort_list.append(pair_tuple)
+
+    return sort_list
+
+
 def fetch_collection(
-    db: Database, collection_name: Any, query: Optional[Dict]
+    db: Database,
+    collection_name: Any,
+    query: Optional[Dict],
+    projection: Optional[str],
+    sort: Optional[str],
 ) -> List[Dict]:
     """Fetches documents of the specified collection."""
 
     check_collection(collection_name)
+    response_fields = projection.split(",") if projection else None
+    sort_options = parse_sort(sort) if sort else None
     db_collection = db[collection_name]
-    query_result = mongo.query_collection(db_collection, query)
+    query_result = mongo.query_collection(
+        db_collection, query, response_fields, sort_options
+    )
     documents = [parse_object_id(item) for item in query_result]
     return documents
 
