@@ -2,8 +2,9 @@ import os
 from typing import Dict, List
 
 import pymongo
+from dotenv import load_dotenv
 
-from mangorest import mongo
+load_dotenv()
 
 MONGODB_URI = os.environ["MONGODB_URI"]
 DATABASE = os.environ["DATABASE"]
