@@ -27,11 +27,12 @@ def get_collection(resource) -> Response:
             "_sort", None
         )  # eg. _sort=(name:ascending),(thrust_to_weight_ratio:descending)
 
-        limit = request_args.pop("_limit", None)
+        limit = request_args.pop("_limit", None)  # eg. _limit=23
+        skip = request_args.pop("_skip", None)  # eg. _skip=10
 
         query = services.map_to_query_operator(request_args)
         documents = services.fetch_collection(
-            db, collection_name, query, projection, sort, limit
+            db, collection_name, query, projection, sort, limit, skip
         )
         return jsonify(documents)
     except exceptions.ResourceNameNotFoundError as e:

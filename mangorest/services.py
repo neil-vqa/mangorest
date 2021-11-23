@@ -20,7 +20,6 @@ mapper.resource_collection_map_parser()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
-# TODO: collection pagination, counting
 # TODO: logging
 # TODO: jwt auth
 # TODO: cli (user creation)
@@ -199,6 +198,7 @@ def fetch_collection(
     projection: Optional[str],
     sort: Optional[str],
     limit: Optional[str],
+    skip: Optional[str],
 ) -> List[Dict]:
     """Fetches documents of the specified collection."""
 
@@ -206,10 +206,11 @@ def fetch_collection(
     response_fields = projection.split(",") if projection else None
     sort_options = parse_sort(sort) if sort else None
     limit_count = int(limit) if limit else 0
+    skip_value = int(skip) if skip else 0
 
     db_collection = db[collection_name]
     query_result = mongo.query_collection(
-        db_collection, query, response_fields, sort_options, limit_count
+        db_collection, query, response_fields, sort_options, limit_count, skip_value
     )
     documents = [parse_object_id(item) for item in query_result]
     return documents
