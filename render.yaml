@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: mangorest
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn mangorest:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_APP
+        value: mangorest:app
+      - key: MONGODB_URI
+        sync: false
+      - key: DATABASE
+        sync: false
+      - key: COLLECTIONS
+        sync: false

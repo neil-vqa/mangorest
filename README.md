@@ -69,13 +69,19 @@ Reference: https://flask.palletsprojects.com/en/2.0.x/deploying/index.html
 
 This section presents a few of the quick deployment options for MangoREST. 
 
-### Install as a package + gunicorn
+### Deploy to Heroku with One-Click button
 
-### Deploy to Heroku with deploy button
-
-A quick and easy way to deploy and configure MangoREST as a Heroku app.
+A quick and easy way to deploy and configure MangoREST as a [Heroku](https://www.heroku.com/) app.
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+### Deploy to Render with One-Click button
+
+A quick and easy way to deploy and configure MangoREST as a [Render](https://render.com/) app.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+### Install as a package + gunicorn
 
 ## Authentication
 
