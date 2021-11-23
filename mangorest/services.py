@@ -20,22 +20,22 @@ mapper.resource_collection_map_parser()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
-# TODO: collection limits, pagination, counting
+# TODO: collection pagination, counting
 # TODO: logging
 # TODO: jwt auth
 # TODO: cli (user creation)
 
 
 def parse_object_id(document):
-    """Converts ObjectId to be serializable."""
+    """Converts ObjectIds within document to be serializable."""
 
-    if type(document) is dict:
-        document["_id"] = json.loads(json_util.dumps(document["_id"]))
-        return document
-    elif type(document) is ObjectId:
+    if (
+        type(document) is ObjectId
+    ):  # case where the ObjectId itself is directly passed to the function
         oid = json.loads(json_util.dumps(document))
         oid_dict = {"_id": oid}
         return oid_dict
+    return json.loads(json_util.dumps(document))
 
 
 def check_resource_name(resource_name):
@@ -198,15 +198,18 @@ def fetch_collection(
     query: Optional[Dict],
     projection: Optional[str],
     sort: Optional[str],
+    limit: Optional[str],
 ) -> List[Dict]:
     """Fetches documents of the specified collection."""
 
     check_collection(collection_name)
     response_fields = projection.split(",") if projection else None
     sort_options = parse_sort(sort) if sort else None
+    limit_count = int(limit) if limit else 0
+
     db_collection = db[collection_name]
     query_result = mongo.query_collection(
-        db_collection, query, response_fields, sort_options
+        db_collection, query, response_fields, sort_options, limit_count
     )
     documents = [parse_object_id(item) for item in query_result]
     return documents

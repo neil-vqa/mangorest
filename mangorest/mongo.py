@@ -38,10 +38,11 @@ def query_collection(
     query: Optional[Dict],
     projection: Optional[List],
     sort_options: Optional[List],
+    limit: Optional[int],
 ) -> Cursor:
     try:
         result = db_collection.find(
-            filter=query, projection=projection, sort=sort_options
+            filter=query, projection=projection, sort=sort_options, limit=limit
         )
         return result
     except Exception:

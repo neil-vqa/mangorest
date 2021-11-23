@@ -96,6 +96,7 @@ def test_fetch_collection(db_connection, test_args):
         test_args.query_empty,
         projection=None,
         sort=None,
+        limit=1,
     )
     assert len(result) >= 1
 
