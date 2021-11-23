@@ -73,6 +73,10 @@ This section presents a few of the quick deployment options for MangoREST.
 
 ### Deploy to Heroku with deploy button
 
+A quick and easy way to deploy and configure MangoREST as a Heroku app.
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
 ## Authentication
 
 ## API
