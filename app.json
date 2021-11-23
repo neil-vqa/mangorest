@@ -2,7 +2,7 @@
     "name": "MangoREST",
     "description": "Serve a RESTful API from any MongoDB database.",
     "repository": "https://github.com/neil-vqa/mangorest",
-    "logo": "https://res.cloudinary.com/nvqacloud/image/upload/v1637629238/mangorest-logo_qrh1ct.png",
+    "logo": "https://res.cloudinary.com/nvqacloud/image/upload/v1637633371/mangorest-name_nmgols.png",
     "keywords": [
         "flask",
         "mongodb",
@@ -27,5 +27,6 @@
         "COLLECTIONS": {
             "description": "Sequence of `resource_name:collection_name` pairs separated by commas. (Example) rockets:rocket_engines,vehicles:launch_vehicles"
         }
-    }
+    },
+    "website": "https://github.com/neil-vqa/mangorest"
 }
