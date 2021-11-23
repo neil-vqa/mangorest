@@ -1,0 +1,31 @@
+{
+    "name": "MangoREST",
+    "description": "Serve a RESTful API from any MongoDB database.",
+    "repository": "https://github.com/neil-vqa/mangorest",
+    "logo": "https://res.cloudinary.com/nvqacloud/image/upload/v1637629238/mangorest-logo_qrh1ct.png",
+    "keywords": [
+        "flask",
+        "mongodb",
+        "rest",
+        "api"
+    ],
+    "env": {
+        "FLASK_ENV": {
+            "description": "Sets the context to where Flask is running in.",
+            "value": "production"
+        },
+        "FLASK_APP": {
+            "description": "For specifying how to load the application.",
+            "value": "mangorest:app"
+        },
+        "MONGODB_URI": {
+            "description": "For database connection. (Example) mongodb+srv://<username>:<password>@<cluster_name>.123xy.mongodb.net/<db_name>?retryWrites=true&w=majority"
+        },
+        "DATABASE": {
+            "description": "Name of the database to be exposed to REST clients. Only one (1) allowed."
+        },
+        "COLLECTIONS": {
+            "description": "Sequence of `resource_name:collection_name` pairs separated by commas. (Example) rockets:rocket_engines,vehicles:launch_vehicles"
+        }
+    }
+}
