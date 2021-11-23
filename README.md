@@ -11,6 +11,12 @@ MangoREST aims to speed up serving RESTful APIs for CRUD apps utilizing MongoDB.
 
 Inspired by the giants [RESTHEART](https://restheart.org/) (written in Java), and [PostgREST](https://postgrest.org/en/v8.0/index.html) (written in Haskell).
 
+## Get Started
+
+There is no hard-ruled step-by-step guide on how to get MangoREST up and running since it actually depends on the deployment strategy. Read the [Installation and Deployment](#installation-and-deployment) section for some deployment options. Remember that MangoREST is just a Flask app.
+
+There are specific things that must be done though to start using MangoREST. One, is to provide configuration (see [Configuration](#configuration) section for the config parameters). Also, the MangoREST *user collection* and at least one superuser must be created (see [Authentication](#authentication) section).
+
 ## Configuration
 
 MangoREST configuration is set using environment variables to determine the database information and ways on how to serve REST client requests. Reading from a `.env` file is supported. Here is the complete list of configuration parameters:
@@ -32,6 +38,7 @@ Reference: https://flask.palletsprojects.com/en/2.0.x/cli/
 Required. To be used by `pymongo.mongo_client.MongoClient`.
 
 Reference(1): https://docs.mongodb.com/manual/reference/connection-string/
+
 Reference(2): https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient
 
 #### DATABASE
@@ -44,7 +51,7 @@ Required. A sequence of `resource_name:collection_name` pairs separated by comma
 
 **If you don't care exposing ALL** collections and their collection names, you can use an asterisk wildcard `*`. The collection names themselves will be the `resource_name` to be used for the API endpoints.
 
-Here is an example config taken from the `.env.example` file:
+Here is an example config taken from the `.env.example` file in this repo:
 
 ```bash
 FLASK_ENV=production
@@ -54,7 +61,17 @@ DATABASE=therocketcorpdb
 COLLECTIONS=rockets:rocket_engines,vehicles:launch_vehicles
 ```
 
-## Installation
+## Installation and Deployment
+
+MangoREST is *just* a Flask app. Therefore, ways to deploy Flask also applies to deploying MangoREST. 
+
+Reference: https://flask.palletsprojects.com/en/2.0.x/deploying/index.html
+
+This section presents a few of the quick deployment options for MangoREST. 
+
+### Install as a package + gunicorn
+
+### Deploy to Heroku with deploy button
 
 ## Authentication
 
