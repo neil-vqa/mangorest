@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 MONGODB_URI = os.environ["MONGODB_URI"]
 DATABASE = os.environ["DATABASE"]
 COLLECTION = os.environ["COLLECTIONS"]
@@ -35,3 +36,26 @@ class MangoConfigurator:
         client.close()
         resource_collection_list = [f"{item}:{item}" for item in collections_list]
         return cls(resource_collection_list)
+
+
+LOG_HANDLERS = ["console"]
+
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{levelname} | {module} | {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "level": "DEBUG",
+        },
+    },
+    "loggers": {},
+    "root": {"level": "INFO", "handlers": LOG_HANDLERS},
+}

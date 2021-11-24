@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import re
 from typing import Any, Dict, List, Optional
 
@@ -9,6 +10,8 @@ from bson.objectid import ObjectId
 from pymongo.database import Database
 
 from mangorest import config, exceptions, mongo
+
+logger = logging.getLogger(__name__)
 
 if config.COLLECTION == "*":
     mapper = config.MangoConfigurator.from_unmapped_all_collections()
