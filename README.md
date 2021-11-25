@@ -155,9 +155,42 @@ MangoREST currently only supports getting a single document thru its [ObjectId](
 GET /api/rockets/6195b0eb829a2784b4459a7f
 ```
 
-### Inserting or Updating
+### Inserting and Updating
 
-WIP
+Create and Update operations can only be done by authenticated users.
+
+**SINGLE INSERT.** Using the *rocket_engine* collection above, create a new document by:
+
+```
+POST /api/rockets
+
+{"name":"RD-180", "country":"Russia", "thrust_to_weight_ratio": 78, "manufacturer": "NPO Energomash"}
+```
+
+This responds with `201 CREATED` with the newly created document's `_id` if succcessful.
+
+**MULTIPLE INSERTS.** To insert multiple documents into a collection, pass an array of objects.
+
+```
+POST /api/rockets
+
+[
+    {
+        "name": "RD-360",
+        "country": "North Pole",
+        "thrust_to_weight_ratio": 150,
+        "manufacturer": "Energomasher",
+    },
+    {
+        "name": "RD-270",
+        "country": "Antarctica",
+        "thrust_to_weight_ratio": 110,
+        "manufacturer": "Energomasher",
+    },
+]
+```
+
+This responds with `201 CREATED` with an array of the newly created documents' `_id`s if succcessful.
 
 ### Deleting
 
