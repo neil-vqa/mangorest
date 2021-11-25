@@ -41,17 +41,14 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: python -m poetry install
 
-      - name: Set environment variables
-        run: |
-          touch .env
-          echo FLASK_ENV=testing >> .env
-          echo FLASK_APP=mangorest:app >> .env
-          echo MONGODB_URI=${{ secrets.MONGODB_URI }} >> .env
-          echo DATABASE=${{ secrets.DATABASE }} >> .env
-          echo COLLECTIONS=${{ secrets.COLLECTIONS }} >> .env
-
       - name: Lint
         run: python -m poetry run bash scripts/lint-check.sh
 
       - name: Test
         run: python -m poetry run pytest
+        env:
+          FLASK_ENV: testing
+          FLASK_APP: mangorest:app
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          DATABASE: ${{ secrets.DATABASE }}
+          COLLECTIONS: ${{ secrets.COLLECTIONS }}
