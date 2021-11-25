@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional
 
 import bson
@@ -15,29 +16,50 @@ from pymongo.errors import (
 
 from mangorest import config
 
+logger = logging.getLogger(__name__)
+
 
 def connect() -> Database:
     try:
+        logger.info("Connecting to MongoDB.")
         client = pymongo.MongoClient(config.MONGODB_URI)
-        database = client[config.DB_SCHEMA]
+        database = client[config.DATABASE]
+        logger.info("Connection to MongoDB successful.")
         return database
     except ConfigurationError:
-        raise ConfigurationError(
-            "Incorrectly configured. Please check your MONGODB_URI or DB_SCHEMA config."
+        logger.exception(
+            "Incorrectly configured. Please check your MONGODB_URI or DATABASE config."
         )
+        raise
     except ConnectionFailure:
-        raise ConnectionFailure("Connecting to MongoDB failed.")
+        logger.exception("Connecting to MongoDB failed.")
+        raise
     except AutoReconnect:
-        raise AutoReconnect(
+        logger.exception(
             "MongoDB connection lost. Will attempt to reconnect in the next operation."
         )
+        raise
 
 
-def query_collection(db_collection: Collection, query: Optional[Dict]) -> Cursor:
+def query_collection(
+    db_collection: Collection,
+    query: Optional[Dict],
+    projection: Optional[List],
+    sort_options: Optional[List],
+    limit: Optional[int],
+    skip: Optional[int],
+) -> Cursor:
     try:
-        result = db_collection.find(query)
+        result = db_collection.find(
+            filter=query,
+            projection=projection,
+            sort=sort_options,
+            limit=limit,
+            skip=skip,
+        )
         return result
     except Exception:
+        logger.exception("An unexpected error happened.")
         raise
 
 
@@ -46,8 +68,10 @@ def insert_single_document(db_collection: Collection, document_obj: Dict) -> Obj
         document_obj_id = db_collection.insert_one(document_obj).inserted_id
         return document_obj_id
     except DuplicateKeyError:
+        logger.info("Key already exists.")
         raise
     except Exception:
+        logger.exception("An unexpected error happened.")
         raise
 
 
@@ -58,8 +82,10 @@ def insert_multiple_documents(
         document_obj_ids = db_collection.insert_many(document_obj).inserted_ids
         return document_obj_ids
     except DuplicateKeyError:
+        logger.info("Key already exists.")
         raise
     except Exception:
+        logger.exception("An unexpected error happened.")
         raise
 
 
@@ -68,8 +94,10 @@ def query_document(db_collection: Collection, oid: str) -> Dict:
         document = db_collection.find_one({"_id": ObjectId(oid)})
         return document
     except bson.errors.InvalidId:
+        logger.info("Invalid ObjectId.")
         raise
     except Exception:
+        logger.exception("An unexpected error happened.")
         raise
 
 
@@ -82,10 +110,13 @@ def update_single_document(
         )
         return result
     except bson.errors.InvalidId:
+        logger.info("Invalid ObjectId.")
         raise
     except DuplicateKeyError:
+        logger.info("Key already exists.")
         raise
     except Exception:
+        logger.exception("An unexpected error happened.")
         raise
 
 
@@ -94,6 +125,8 @@ def delete_single_document(db_collection: Collection, oid: str) -> Any:
         result = db_collection.find_one_and_delete({"_id": ObjectId(oid)})
         return result
     except bson.errors.InvalidId:
+        logger.info("Invalid ObjectId.")
         raise
     except Exception:
+        logger.exception("An unexpected error happened.")
         raise
