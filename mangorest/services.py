@@ -41,13 +41,13 @@ def parse_object_id(document):
 
 
 def check_resource_name(resource_name):
-    if not resource_name in endpoints:
+    if resource_name not in endpoints:
         raise exceptions.ResourceNameNotFoundError("API endpoint does not exist.")
     return endpoints[resource_name]
 
 
 def check_collection(collection_name):
-    if not collection_name in collection_set:
+    if collection_name not in collection_set:
         raise exceptions.CollectionNotFoundError(
             "Collection not set to be exposed to REST clients."
         )
