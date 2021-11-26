@@ -51,9 +51,7 @@ def test_args():
     ]
 
     doc_update = {
-        "country": "Antarctica",
         "manufacturer": "Energomasher Inc.",
-        "name": "RD-180",
         "thrust_to_weight_ratio": 150,
     }
 
@@ -150,7 +148,7 @@ def test_get_document_endpoint(client, test_args, oid_query):
 
 
 def test_update_document_endpoint(client, test_args, oid_query):
-    resp = client.put(f"{ test_args.api_url}/{oid_query}", json=test_args.updated_doc)
+    resp = client.patch(f"{ test_args.api_url}/{oid_query}", json=test_args.updated_doc)
     assert resp.status == "204 NO CONTENT"
 
 

@@ -72,7 +72,7 @@ def get_document(resource, oid) -> Response:
         abort(404, description=e)
 
 
-@app.put("/api/<resource>/<oid>")
+@app.patch("/api/<resource>/<oid>")
 def update_document_in_collection(resource, oid) -> Tuple[Response, int]:
     try:
         document = request.json
