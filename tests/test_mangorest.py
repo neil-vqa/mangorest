@@ -5,7 +5,6 @@ import pytest
 
 import mangorest.mongo as mongo
 import mangorest.services as services
-import mangorest.auth as auth
 from mangorest import app
 
 
@@ -157,17 +156,3 @@ def test_update_document_endpoint(client, test_args, oid_query):
 def test_delete_document_endpoint(client, test_args, oid_query):
     resp = client.delete(f"{test_args.api_url}/{oid_query}")
     assert resp.status == "204 NO CONTENT"
-
-
-# ============================================================
-# Testing utilities
-# ============================================================
-
-
-def test_create_user():
-    username = "neeban"
-    password = "123qwerty"
-
-    resp = auth.create_user(username, password)
-
-    assert type(resp) is ObjectId
