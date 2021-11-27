@@ -111,14 +111,14 @@ def test_update_document(db_connection, test_args, oid_query):
     result = services.update_document(
         db_connection, test_args.collection_name, oid_query, test_args.updated_doc
     )
-    assert result == True
+    assert result is True
 
 
 def test_delete_document(db_connection, test_args, oid_query):
     result = services.delete_document(
         db_connection, test_args.collection_name, oid_query
     )
-    assert result == True
+    assert result is True
 
 
 # ============================================================

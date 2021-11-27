@@ -12,6 +12,8 @@ pymongo = {extras = ["srv"], version = "^3.12.1"}
 python-dotenv = "^0.19.2"
 Flask-Cors = "^3.0.10"
 gunicorn = "^20.1.0"
+Flask-JWT-Extended = "^4.3.1"
+PyNaCl = "^1.4.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
@@ -31,3 +33,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.isort]
 profile = "black"
 multi_line_output = 3
+
+[tool.poetry.scripts]
+mangorest = "mangorest.cli:runner"
