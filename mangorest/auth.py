@@ -1,9 +1,11 @@
 from typing import NamedTuple
-from bson.objectid import ObjectId
-from mangorest import config, mongo
+
 import nacl.pwhash
 import pymongo
+from bson.objectid import ObjectId
 from pymongo.collection import Collection
+
+from mangorest import config, mongo
 
 
 class MangoUser(NamedTuple):

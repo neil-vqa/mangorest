@@ -1,6 +1,7 @@
 from typing import NamedTuple
-from bson.objectid import ObjectId
+
 import pytest
+from bson.objectid import ObjectId
 
 import mangorest.auth as auth
 import mangorest.mongo as mongo
