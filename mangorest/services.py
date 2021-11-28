@@ -23,10 +23,6 @@ mapper.resource_collection_map_parser()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
-# TODO: logging
-# TODO: jwt auth
-# TODO: cli (user creation)
-
 
 def parse_object_id(document):
     """Converts ObjectIds within document to be serializable."""
@@ -42,7 +38,9 @@ def parse_object_id(document):
 
 def check_resource_name(resource_name):
     if resource_name not in endpoints:
-        raise exceptions.ResourceNameNotFoundError("API endpoint does not exist.")
+        raise exceptions.ResourceNameNotFoundError(
+            "Resource name not found. API endpoint does not exist."
+        )
     return endpoints[resource_name]
 
 

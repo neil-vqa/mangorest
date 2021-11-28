@@ -1,6 +1,7 @@
 from typing import NamedTuple
 
 import nacl.pwhash
+import nacl.exceptions
 import pymongo
 from bson.objectid import ObjectId
 from pymongo.collection import Collection
@@ -25,8 +26,6 @@ def create_user(users_collection: Collection, username: str, password: str) -> O
 
 def get_user(users_collection: Collection, username: str):
     try:
-        print(type(users_collection))
-        print(username)
         resp = users_collection.find_one({"username": username})
         if resp:
             user = MangoUser(resp["username"], resp["password"])
@@ -43,7 +42,7 @@ def check_password(user, entered_password) -> None:
 
     try:
         nacl.pwhash.verify(correct_user_password, entered_user_password)
-    except Exception:
+    except nacl.exceptions.InvalidkeyError:
         raise
 
 

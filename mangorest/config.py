@@ -10,6 +10,7 @@ load_dotenv()
 MONGODB_URI = os.environ["MONGODB_URI"]
 DATABASE = os.environ["DATABASE"]
 COLLECTION = os.environ["COLLECTIONS"]
+JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 
 
 class MangoConfigurator:

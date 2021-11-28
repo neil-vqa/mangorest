@@ -11,4 +11,6 @@ logging.config.dictConfig(config.LOGGING_CONFIG)
 
 app = Flask(__name__)
 
+app.config["JWT_SECRET_KEY"] = config.JWT_SECRET_KEY
+
 import mangorest.views
