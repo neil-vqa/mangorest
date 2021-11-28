@@ -54,3 +54,4 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           DATABASE: ${{ secrets.DATABASE }}
           COLLECTIONS: ${{ secrets.COLLECTIONS }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
