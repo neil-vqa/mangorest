@@ -20,12 +20,13 @@ else:
     mapper = config.MangoConfigurator(resource_to_collection_list)
 
 mapper.resource_collection_map_parser()
+mapper.verify_collection_exists()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
-# TODO: logging
-# TODO: jwt auth
-# TODO: cli (user creation)
+# ===============================================
+# utilities
+# ===============================================
 
 
 def parse_object_id(document):
@@ -42,15 +43,10 @@ def parse_object_id(document):
 
 def check_resource_name(resource_name):
     if resource_name not in endpoints:
-        raise exceptions.ResourceNameNotFoundError("API endpoint does not exist.")
-    return endpoints[resource_name]
-
-
-def check_collection(collection_name):
-    if collection_name not in collection_set:
-        raise exceptions.CollectionNotFoundError(
-            "Collection not set to be exposed to REST clients."
+        raise exceptions.ResourceNameNotFoundError(
+            "Resource name not found. API endpoint does not exist."
         )
+    return endpoints[resource_name]
 
 
 def cast_query_types(query_type, query_value) -> Any:
@@ -194,6 +190,11 @@ def parse_sort(sort: str) -> Any:
     return sort_list
 
 
+# ===============================================
+# crud services
+# ===============================================
+
+
 def fetch_collection(
     db: Database,
     collection_name: Any,
@@ -205,7 +206,6 @@ def fetch_collection(
 ) -> List[Dict]:
     """Fetches documents of the specified collection."""
 
-    check_collection(collection_name)
     response_fields = projection.split(",") if projection else None
     sort_options = parse_sort(sort) if sort else None
     limit_count = int(limit) if limit else 0
@@ -222,7 +222,6 @@ def fetch_collection(
 def create_document(db: Database, collection_name: Any, document_obj: Any):
     """Inserts a single or multiple  documents. Returns the objectid."""
 
-    check_collection(collection_name)
     db_collection = db[collection_name]
 
     if type(document_obj) is dict:
@@ -236,7 +235,6 @@ def create_document(db: Database, collection_name: Any, document_obj: Any):
 def fetch_document(db: Database, collection_name: Any, oid: str) -> Dict:
     """Fetches the document with the given objectid."""
 
-    check_collection(collection_name)
     db_collection = db[collection_name]
     query_result = mongo.query_document(db_collection, oid)
 
@@ -254,7 +252,6 @@ def update_document(
 ) -> bool:
     """Updates a single document with the given objectid."""
 
-    check_collection(collection_name)
     db_collection = db[collection_name]
     update_result = mongo.update_single_document(db_collection, oid, document_obj)
 
@@ -269,7 +266,6 @@ def update_document(
 def delete_document(db: Database, collection_name: Any, oid: str) -> bool:
     """Deletes a single document with the given objectid."""
 
-    check_collection(collection_name)
     db_collection = db[collection_name]
     delete_result = mongo.delete_single_document(db_collection, oid)
 
