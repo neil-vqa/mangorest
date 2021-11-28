@@ -67,6 +67,25 @@ def oid_query(db_connection, test_args):
     return parsed_doc["_id"]["$oid"]
 
 
+@pytest.fixture
+def user():
+    class TestUser(NamedTuple):
+        username: str
+        password: str
+
+    dummy = TestUser("neeban", "123qwerty")
+    return dummy
+
+
+@pytest.fixture
+def jwt_token(client, user):
+    resp = client.post(
+        "/login",
+        json={"username": user.username, "password": user.password},
+    )
+    return resp.json["access_token"]
+
+
 # ============================================================
 # Testing services
 # ============================================================
@@ -126,10 +145,19 @@ def test_delete_document(db_connection, test_args, oid_query):
 # ============================================================
 
 
-def test_create_document_endpoint(client, test_args):
+def test_login_endpoint(user, client):
+    resp = client.post(
+        "/login",
+        json={"username": user.username, "password": user.password},
+    )
+    assert "access_token" in resp.json
+
+
+def test_create_document_endpoint(client, test_args, jwt_token):
     resp = client.post(
         test_args.api_url,
         json=test_args.single_doc,
+        headers={"Authorization": f"Bearer {jwt_token}"},
     )
     assert resp.status == "201 CREATED"
 
@@ -147,11 +175,18 @@ def test_get_document_endpoint(client, test_args, oid_query):
     assert oid_query == oid
 
 
-def test_update_document_endpoint(client, test_args, oid_query):
-    resp = client.patch(f"{ test_args.api_url}/{oid_query}", json=test_args.updated_doc)
+def test_update_document_endpoint(client, test_args, oid_query, jwt_token):
+    resp = client.patch(
+        f"{ test_args.api_url}/{oid_query}",
+        json=test_args.updated_doc,
+        headers={"Authorization": f"Bearer {jwt_token}"},
+    )
     assert resp.status == "204 NO CONTENT"
 
 
-def test_delete_document_endpoint(client, test_args, oid_query):
-    resp = client.delete(f"{test_args.api_url}/{oid_query}")
+def test_delete_document_endpoint(client, test_args, oid_query, jwt_token):
+    resp = client.delete(
+        f"{test_args.api_url}/{oid_query}",
+        headers={"Authorization": f"Bearer {jwt_token}"},
+    )
     assert resp.status == "204 NO CONTENT"

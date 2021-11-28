@@ -1,7 +1,7 @@
 from typing import NamedTuple
 
-import nacl.pwhash
 import nacl.exceptions
+import nacl.pwhash
 import pymongo
 from bson.objectid import ObjectId
 from pymongo.collection import Collection
@@ -51,7 +51,7 @@ def create_user_service(username: str, password: str) -> ObjectId:
 
     client = pymongo.MongoClient(config.MONGODB_URI)
     database = client[config.DATABASE]
-    users = database["mangorest_users"]
+    users = database[config.MANGO_USER_COLLECTION]
 
     user_oid = create_user(users, username, password)
 
