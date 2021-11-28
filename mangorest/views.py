@@ -123,16 +123,32 @@ def delete_document_in_collection(resource, oid) -> Tuple[Response, int]:
         abort(400, description=e)
 
 
+# authentication-related
+
+
+@jwt_auth.user_lookup_loader
+def user_lookup_callback(_jwt_header, jwt_data):
+    identity = jwt_data["sub"]
+    user = auth.get_user(db[config.MANGO_USER_COLLECTION], identity)
+    return user
+
+
 @app.post("/login")
 def login() -> Response:
     try:
         username = request.json.get("username", None)  # type: ignore
         password = request.json.get("password", None)  # type: ignore
 
-        current_user = auth.login_service(
+        verified_user = auth.login_service(
             db[config.MANGO_USER_COLLECTION], username, password
         )
-        access_token = flask_jwt.create_access_token(identity=current_user.username)
+        access_token = flask_jwt.create_access_token(identity=verified_user.username)
         return jsonify(access_token=access_token)
     except (AttributeError, ValueError, nacl.exceptions.InvalidkeyError):
         abort(401, description="Bad username or password")
+
+
+@app.get("/me")
+@flask_jwt.jwt_required()
+def current_user_endpoint():
+    return jsonify(username=flask_jwt.current_user.username)
