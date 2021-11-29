@@ -26,6 +26,14 @@
         },
         "COLLECTIONS": {
             "description": "Sequence of `resource_name:collection_name` pairs separated by commas. (Example) rockets:rocket_engines,vehicles:launch_vehicles"
+        },
+        "MANGO_USER_COLLECTION": {
+            "description": "Name of the collection that will be used for storing data of MangoREST users.",
+            "value": "mangorest_users"
+        },
+        "JWT_SECRET_KEY": {
+            "description": "For signing JWT access tokens.",
+            "generator": "secret"
         }
     },
     "website": "https://github.com/neil-vqa/mangorest"
