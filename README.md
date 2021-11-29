@@ -11,11 +11,43 @@ MangoREST aims to speed up serving RESTful APIs for CRUD apps utilizing MongoDB.
 
 Inspired by the giants [RESTHEART](https://restheart.org/) (written in Java), and [PostgREST](https://postgrest.org/en/v8.0/index.html) (written in Haskell).
 
+
+## Table of Contents
+
+You may also view the auto-generated TOC using the button located at the upper left corner of this readme.
+
+- [Get Started](#get-started)
+- [Configuration](#configuration)
+    + [FLASK_ENV](#flask-env)
+    + [FLASK_APP](#flask-app)
+    + [JWT_SECRET_KEY](#jwt-secret-key)
+    + [MONGODB_URI](#mongodb-uri)
+    + [DATABASE](#database)
+    + [COLLECTIONS](#collections)
+    + [MANGO_USER_COLLECTION](#mango-user-collection)
+  * [Example Config](#example-config)
+- [Installation and Deployment](#installation-and-deployment)
+  * [Deploy to Heroku with One-Click button](#deploy-to-heroku-with-one-click-button)
+  * [Deploy to Render with One-Click button](#deploy-to-render-with-one-click-button)
+  * [Install as a package + gunicorn](#install-as-a-package---gunicorn)
+- [Authentication](#authentication)
+  * [JWT Auth](#jwt-auth)
+  * [Re: User registration](#re--user-registration)
+  * [Endpoints](#endpoints)
+- [API](#api)
+  * [Querying Collections](#querying-collections)
+  * [Getting a Document](#getting-a-document)
+  * [Inserting and Updating](#inserting-and-updating)
+  * [Deleting](#deleting)
+- [Type Hints](#type-hints)
+
+
 ## Get Started
 
 There is no hard-ruled step-by-step guide on how to get MangoREST up and running since it actually depends on the deployment strategy. Read the [Installation and Deployment](#installation-and-deployment) section for some deployment options. Remember that MangoREST is just a Flask app.
 
-There are specific things that must be done though to start using MangoREST. One, is to provide configuration (see [Configuration](#configuration) section for the config parameters). Also, the MangoREST *user collection* and at least one superuser must be created (see [Authentication](#authentication) section).
+There are specific things that must be done though to start using MangoREST. One, is to provide configuration (see [Configuration](#configuration) section for the config parameters). Also, the MangoREST *user collection* and at least one user must be created (see [Authentication](#authentication) section).
+
 
 ## Configuration
 
@@ -33,6 +65,10 @@ Required. Used to specify how to load the application. **Must** be set to `mango
 
 Reference: https://flask.palletsprojects.com/en/2.0.x/cli/
 
+#### JWT_SECRET_KEY
+
+Required. This will be used to sign JWT access tokens needed for MangoREST's default auth using JWT. Read the [Authentication](#authentication) section for the details. If summoning a terminal isn't your thing (woah), you may quickly generate a secret key using this web tool https://djecrety.ir/
+
 #### MONGODB_URI
 
 Required. For the database connection.
@@ -43,23 +79,32 @@ Reference(2): https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.
 
 #### DATABASE
 
-Required. Name of the database to be exposed to REST clients. MangoREST only allows a single database to be specified. The name itself will not be exposed.
+Required. Name of the database to be exposed to REST clients. MangoREST only allows a single database to be specified. This database should already exist. The name itself will not be exposed.
 
 #### COLLECTIONS
 
-Required. A sequence of `resource_name:collection_name` pairs separated by commas. To avoid exposing the database's collection names, the `resource_name`s will be used for the API endpoints. Map a `resource_name` to the name of the collection that will be exposed to REST clients.
+Required. A sequence of `resource_name:collection_name` pairs separated by commas. To avoid exposing the database's collection names, the `resource_name`s will be used for the API endpoints. Map a `resource_name` to the name of the collection that will be exposed to REST clients. These collections should already exist even if they are still empty.
 
 If you don't care exposing **ALL** collections and their collection names, you can use an asterisk wildcard `*`. The collection names themselves will be the `resource_name` to be used for the API endpoints.
+
+#### MANGO_USER_COLLECTION
+
+Optional. Name of the collection that will be used for storing data of MangoREST users created thru CLI. Default: `mangorest_users`. This does not need to exist beforehand. MangoREST will create the collection if not yet existing. Read the [Authentication](#authentication) section for more details.  
+
+### Example Config
 
 Here is an example config taken from the `.env.example` file in this repo:
 
 ```bash
 FLASK_ENV=production
 FLASK_APP=mangorest:app
-MONGODB_URI=mongodb://localhost:27017/
+JWT_SECRET_KEY=*1g$&3%an#x!+rogd@*iyhffs!a32575kd-)d*ajyr2s$kiuf!
+MONGODB_URI=mongodb+srv://<username>:<password>@nvqa-dbs.93h2e.mongodb.net/myDatabase?retryWrites=true&w=majority
 DATABASE=therocketcorpdb
 COLLECTIONS=rockets:rocket_engines,vehicles:launch_vehicles
+MANGO_USER_COLLECTION=user_db
 ```
+
 
 ## Installation and Deployment
 
@@ -83,13 +128,56 @@ A quick and easy way to deploy and configure MangoREST as a [Render](https://ren
 
 ### Install as a package + gunicorn
 
+WIP
+
+
 ## Authentication
 
-WIP
+This section discusses the auth sytem that comes with installing MangoREST. You can absolutely ditch this and implement your own.
+
+### JWT Auth
+
+First, please don't forget to provide a JWT_SECRET_KEY for the application. By default, authentication is required to send POST, PATCH, and  DELETE to certain endpoints. The [Flask-JWT-Extended](https://flask-jwt-extended.readthedocs.io/en/stable/) extension is used to create and verify JWTs.
+
+MangoREST provides a CLI that includes a command for creating users. Use `mangorest createuser [username]` command. This will prompt for a password and password confirmation. If it succeeds, the username and password can now be used to authenticate and access protected routes. Send a POST to `/login` endpoint to authenticate. This will respond with a JWT access token.
+
+### Re: User registration
+
+No REST API endpoint is available fo user registration. If needed though, this can be easily set up by using functions in the mangorest.auth module.
+
+```python
+from mangorest import auth, config, services
+
+@app.post("/register")
+def register_user():
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
+
+    new_user_oid = auth.create_user(
+        users_collection=db[config.MANGO_USER_COLLECTION],
+        username=username, 
+        password=password
+    )
+
+    parsed_oid = services.parse_object_id(new_user_id)
+
+    return jsonify({"username": username, **parsed_oid}), 201
+```
+
+### Endpoints
+
+As a summary for this section, here are the authentication-related endpoints:
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /login` | Send username and password; returns JWT token |
+| `GET /me` | Provide JWT token in Authorization header; returns the username of the authenticated user |
+| `POST /register` | If set up like the above, send username and password; returns the username and oid of the newly creadted user |
+
 
 ## API
 
-Routes provide GET, POST, PUT, DELETE verbs. By default, only GET is available publicly, the rest require authentication. Read [Authentication](#authentication) section for customizing this behavior. Please note that all enpoints are within `/api` which is automatically prepended by MangoREST. 
+Routes provide GET, POST, PATCH, DELETE verbs. By default, only GET is available publicly, the rest require authentication. Read [Authentication](#authentication) section for customizing this behavior. Please note that all enpoints are within `/api` which is automatically prepended by MangoREST. 
 
 ### Querying Collections
 
@@ -192,9 +280,29 @@ POST /api/rockets
 
 This responds with `201 CREATED` with an array of the newly created documents' `_id`s if succcessful.
 
+**SINGLE UPDATE.** To update a document, specify the fields to be updated:
+
+```
+PATCH /api/rockets/61a30c07032f56ecef3c845e
+
+{
+    "manufacturer": "Energomasher Luna"
+    "thrust_to_weight_ratio": 150
+}
+```
+
+This responds with `204 NO CONTENT` if succcessful.
+
 ### Deleting
 
-WIP
+**SINGLE DELETE.** To delete a single document, do the following:
+
+```
+DELETE /api/rockets/61a30c07032f56ecef3c845e
+```
+
+This responds with `204 NO CONTENT` if succcessful.
+
 
 ## Type Hints
 
