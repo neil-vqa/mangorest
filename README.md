@@ -40,6 +40,10 @@ You may also view the auto-generated TOC using the button located at the upper l
   * [Inserting and Updating](#inserting-and-updating)
   * [Deleting](#deleting)
 - [Type Hints](#type-hints)
+  * [For fields with NON-STRING values](#for-fields-with-non-string-values)
+  * [When using comparison query operators](#when-using-comparison-query-operators)
+  * [When using logical query operators](#when-using-logical-query-operators)
+  * [Type Hinting notation](#type-hinting-notation)
 
 
 ## Get Started
@@ -172,12 +176,12 @@ As a summary for this section, here are the authentication-related endpoints:
 |----------|-------------|
 | `POST /login` | Send username and password; returns JWT token |
 | `GET /me` | Provide JWT token in Authorization header; returns the username of the authenticated user |
-| `POST /register` | If set up like the above, send username and password; returns the username and oid of the newly creadted user |
+| `POST /register` | If set up like the above, send username and password; returns the username and oid of the newly created user |
 
 
 ## API
 
-Routes provide GET, POST, PATCH, DELETE verbs. By default, only GET is available publicly, the rest require authentication. Read [Authentication](#authentication) section for customizing this behavior. Please note that all enpoints are within `/api` which is automatically prepended by MangoREST. 
+Routes provide GET, POST, PATCH, DELETE verbs. By default, only GET is available publicly, the rest require authentication. Read [Authentication](#authentication) section for authentication details. Please note that all enpoints are within `/api` which is automatically prepended by MangoREST. 
 
 ### Querying Collections
 
@@ -306,4 +310,60 @@ This responds with `204 NO CONTENT` if succcessful.
 
 ## Type Hints
 
-WIP
+Type hints must be used in query strings to correctly filter the data to be returned. This is necessary since MangoREST currently does not generate or maintain a schema of the collection as a reference for the types. This section presents the ways type hints are used.
+
+### For fields with NON-STRING values
+
+Queries where the field type is expected to be a *string* such as `GET /api/rockets?country=Antarctica` does not need any type hinting. On the other hand, type hints are needed if a field type is expected to be other than a string. Such examples are:
+
+```
+GET /api/rockets?is_active=[bool].true
+
+GET /api/rockets?thrust_to_weight_ratio=[int].70
+```
+
+### When using comparison query operators
+
+Comparison query operators such as `eq`, `gt`, `lte` can be used in the query string. However, type hint must be provided to correctly filter the data.
+
+```
+GET /api/rockets?thrust_to_weight_ratio=lt[int].70
+
+GET /api/rockets?company=eq[str].Rocket+Lab&thrust_to_weight_ratio=gte[int].50
+```
+
+Some operators expect an array as the value such as `in` and `nin`. Array elements can be type hinted by:
+
+```
+GET /api/rockets?country=in[list-str].[North+Pole,Moon,Antarctica]
+```
+
+### When using logical query operators
+
+Logical query operators such as `and`, `or` can be used in the query string. Type hints must be provided.
+
+```
+GET /api/rockets?and=(thrust_to_weight_ratio.gt[int].70,country.eq[str].North+Pole,is_active.eq[bool].true)
+```
+
+### Type Hinting notation
+
+To conclude this section, here are the type hints you can use in query strings.
+
+| Hint | Description/Python Type |
+|------|------|
+| `int` | integer |
+| `float` | float |
+| `bool` | boolean |
+| `str` | string |
+| `date` | datetime.date |
+| `time` |  datetime.time |
+| `datetime` | datetime.datetime |
+| `timedelta` | datetime.timedelta |
+| `list-int` | Array with integer elements |
+| `list-float` | Array with float elements |
+| `list-str` | Array with string elements |
+| `list-date` | Array with datetime.date elements |
+| `list-time` | Array with datetime.time elements |
+| `list-datetime` | Array with datetime.datetime elements |
+| `list-timedelta` | Array with datetime.timedelta elements |
