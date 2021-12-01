@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import bson
 import pymongo
@@ -120,6 +120,17 @@ def update_single_document(
         raise
 
 
+def update_multiple_documents(
+    db_collection: Collection, query: Dict, modifications: Dict
+) -> Tuple[int, int]:
+    try:
+        result = db_collection.update_many(filter=query, update=modifications)
+        return (result.matched_count, result.modified_count)
+    except Exception:
+        logger.exception("An unexpected error happened.")
+        raise
+
+
 def delete_single_document(db_collection: Collection, oid: str) -> Any:
     try:
         result = db_collection.find_one_and_delete({"_id": ObjectId(oid)})
@@ -127,6 +138,15 @@ def delete_single_document(db_collection: Collection, oid: str) -> Any:
     except bson.errors.InvalidId:
         logger.info("Invalid ObjectId.")
         raise
+    except Exception:
+        logger.exception("An unexpected error happened.")
+        raise
+
+
+def delete_multiple_documents(db_collecton: Collection, query: Dict) -> int:
+    try:
+        result = db_collecton.delete_many(filter=query)
+        return result.deleted_count
     except Exception:
         logger.exception("An unexpected error happened.")
         raise
