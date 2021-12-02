@@ -4,8 +4,8 @@ import pytest
 from bson.objectid import ObjectId
 
 import mangorest.auth as auth
-import mangorest.mongo as mongo
 import mangorest.config as config
+import mangorest.mongo as mongo
 
 
 @pytest.fixture
