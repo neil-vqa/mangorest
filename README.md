@@ -103,10 +103,10 @@ Here is an example config taken from the `.env.example` file in this repo:
 FLASK_ENV=production
 FLASK_APP=mangorest:app
 JWT_SECRET_KEY=*1g$&3%an#x!+rogd@*iyhffs!a32575kd-)d*ajyr2s$kiuf!
-MONGODB_URI=mongodb+srv://<username>:<password>@nvqa-dbs.93h2e.mongodb.net/myDatabase?retryWrites=true&w=majority
-DATABASE=therocketcorpdb
+MONGODB_URI=mongodb://userme:passme@0.0.0.0:27017/mangorest
+DATABASE=mangorest
 COLLECTIONS=rockets:rocket_engines,vehicles:launch_vehicles
-MANGO_USER_COLLECTION=user_db
+MANGO_USER_COLLECTION=users
 ```
 
 

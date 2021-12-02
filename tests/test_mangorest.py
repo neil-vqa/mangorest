@@ -55,7 +55,9 @@ def test_args():
         "thrust_to_weight_ratio": 150,
     }
 
-    args = TestingArguments("rocketeer", {}, doc, doc_list, doc_update, "/api/rockets")
+    args = TestingArguments(
+        "rocket_engines", {}, doc, doc_list, doc_update, "/api/rockets"
+    )
     return args
 
 
