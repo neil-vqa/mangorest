@@ -156,14 +156,14 @@ def test_delete_document(db_connection, test_args, oid_query):
 
 def test_raises_DocumentNotFoundError_when_getting_document(db_connection, test_args):
     with pytest.raises(exceptions.DocumentNotFoundError):
-        result = services.fetch_document(
+        services.fetch_document(
             db_connection, test_args.collection_name, test_args.dummy_oid
         )
 
 
 def test_raises_DocumentNotFoundError_when_updating_document(db_connection, test_args):
     with pytest.raises(exceptions.DocumentNotFoundError):
-        result = services.update_document(
+        services.update_document(
             db_connection,
             test_args.collection_name,
             test_args.dummy_oid,
@@ -173,7 +173,7 @@ def test_raises_DocumentNotFoundError_when_updating_document(db_connection, test
 
 def test_raises_DocumentNotFoundError_when_deleting_document(db_connection, test_args):
     with pytest.raises(exceptions.DocumentNotFoundError):
-        result = services.delete_document(
+        services.delete_document(
             db_connection, test_args.collection_name, test_args.dummy_oid
         )
 
@@ -192,7 +192,7 @@ def test_raises_EmptyQueryFatalActionError_when_updating_documents_without_query
     db_connection, test_args
 ):
     with pytest.raises(exceptions.EmptyQueryFatalActionError):
-        result = services.update_many_documents(
+        services.update_many_documents(
             db_connection,
             test_args.collection_name,
             test_args.query_empty,
@@ -213,7 +213,7 @@ def test_raises_EmptyQueryFatalActionError_when_deleting_documents_without_query
     db_connection, test_args
 ):
     with pytest.raises(exceptions.EmptyQueryFatalActionError):
-        result = services.delete_many_documents(
+        services.delete_many_documents(
             db_connection,
             test_args.collection_name,
             test_args.query_empty,
@@ -299,3 +299,24 @@ def test_delete_many_documents_endpoint(client, test_args, jwt_token):
     )
     assert resp.json["items_deleted"] == 2
     assert resp.status == "200 OK"
+
+
+def test_response_forbidden_when_updating_documents_without_query(
+    client, test_args, jwt_token
+):
+    resp = client.patch(
+        test_args.api_url,
+        json=test_args.multiple_doc_update,
+        headers={"Authorization": f"Bearer {jwt_token}"},
+    )
+    assert resp.status == "403 FORBIDDEN"
+
+
+def test_response_forbidden_when_deleting_documents_without_query(
+    client, test_args, jwt_token
+):
+    resp = client.delete(
+        test_args.api_url,
+        headers={"Authorization": f"Bearer {jwt_token}"},
+    )
+    assert resp.status == "403 FORBIDDEN"

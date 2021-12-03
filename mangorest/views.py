@@ -28,6 +28,11 @@ def unathorized_request(e):
     return jsonify(error=str(e)), 401
 
 
+@app.errorhandler(403)
+def forbidden_action(e):
+    return jsonify(error=str(e)), 403
+
+
 @app.errorhandler(404)
 def resource_not_found(e):
     return jsonify(error=str(e)), 404
@@ -99,6 +104,8 @@ def update_documents_in_collection(resource) -> Tuple[Response, int]:
         return jsonify(matched_items=matched_items, modified_items=modified_items), 200
     except exceptions.ResourceNameNotFoundError as e:
         abort(404, description=e)
+    except exceptions.EmptyQueryFatalActionError as e:
+        abort(403, description=e)
 
 
 @app.delete("/api/<resource>")
@@ -121,6 +128,8 @@ def delete_documents_in_collection(resource) -> Tuple[Response, int]:
         return jsonify(items_deleted=items_deleted), 200
     except exceptions.ResourceNameNotFoundError as e:
         abort(404, description=e)
+    except exceptions.EmptyQueryFatalActionError as e:
+        abort(403, description=e)
 
 
 @app.get("/api/<resource>/<oid>")

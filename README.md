@@ -257,7 +257,7 @@ GET /api/rockets/6195b0eb829a2784b4459a7f
 
 Create and Update operations can only be done by authenticated users.
 
-**SINGLE INSERT.** Using the *rocket_engine* collection above, create a new document by:
+**SINGLE INSERT.** Using the *rocket_engine* collection above, create a new document as shown below. This responds with `201 CREATED` with the newly created document's `_id` if succcessful.
 
 ```
 POST /api/rockets
@@ -265,9 +265,7 @@ POST /api/rockets
 {"name":"RD-180", "country":"Russia", "thrust_to_weight_ratio": 78, "manufacturer": "NPO Energomash"}
 ```
 
-This responds with `201 CREATED` with the newly created document's `_id` if succcessful.
-
-**MULTIPLE INSERTS.** To insert multiple documents into a collection, pass an array of objects.
+**BULK INSERTS.** To insert multiple documents into a collection, pass an array of objects. This responds with `201 CREATED` with an array of the newly created documents' `_id`s if succcessful.
 
 ```
 POST /api/rockets
@@ -288,9 +286,7 @@ POST /api/rockets
 ]
 ```
 
-This responds with `201 CREATED` with an array of the newly created documents' `_id`s if succcessful.
-
-**SINGLE UPDATE.** To update a document, specify the fields to be updated:
+**SINGLE UPDATE.** To update a document, use PATCH and specify the fields to be updated. This responds with `204 NO CONTENT` if succcessful.
 
 ```
 PATCH /api/rockets/61a30c07032f56ecef3c845e
@@ -301,18 +297,31 @@ PATCH /api/rockets/61a30c07032f56ecef3c845e
 }
 ```
 
-This responds with `204 NO CONTENT` if succcessful.
+**BULK UPDATES.** Use PATCH to the collection for updating multiple documents. Request body must specify [update operators](https://docs.mongodb.com/manual/reference/operator/update/). The `_projection, _sort, _limit, _skip` query params are ignored. Updating an unfiltered collection will be considered a fatal action and will respond with `403 FORBIDDEN`. Successful update will return `200 OK`.
+
+```
+PATCH /api/rockets?manufacturer=Energomasher
+
+{
+  "$set": {
+    "country": "Moon"
+  }
+}
+```
 
 ### Deleting
 
-**SINGLE DELETE.** To delete a single document, do the following:
+**SINGLE DELETE.** To delete a single document, do as shown below. This responds with `204 NO CONTENT` if succcessful.
 
 ```
 DELETE /api/rockets/61a30c07032f56ecef3c845e
 ```
 
-This responds with `204 NO CONTENT` if succcessful.
+**BULK DELETES.** Use DELETE to the collection for multiple deletes. The `_projection, _sort, _limit, _skip` query params are ignored. Deleting an unfiltered collection will be considered a fatal action and will respond with `403 FORBIDDEN`. Successful delete will return `200 OK`.
 
+```
+DELETE /api/rockets?manufacturer=Energomasher
+```
 
 ## Type Hints
 
