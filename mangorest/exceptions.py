@@ -18,3 +18,8 @@ class DocumentNotFoundError(MangoRestException):
 class ResourceNameNotFoundError(MangoRestException):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
+
+class EmptyQueryFatalActionError(MangoRestException):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)

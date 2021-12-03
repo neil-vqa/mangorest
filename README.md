@@ -29,6 +29,7 @@ You may also view the auto-generated TOC using the button located at the upper l
 - [Installation and Deployment](#installation-and-deployment)
   * [Deploy to Heroku with One-Click button](#deploy-to-heroku-with-one-click-button)
   * [Deploy to Render with One-Click button](#deploy-to-render-with-one-click-button)
+  * [Docker](#docker)
   * [Install as a package + gunicorn](#install-as-a-package---gunicorn)
 - [Authentication](#authentication)
   * [JWT Auth](#jwt-auth)
@@ -44,6 +45,7 @@ You may also view the auto-generated TOC using the button located at the upper l
   * [When using comparison query operators](#when-using-comparison-query-operators)
   * [When using logical query operators](#when-using-logical-query-operators)
   * [Type Hinting notation](#type-hinting-notation)
+- [Development](#development)
 
 
 ## Get Started

@@ -4,7 +4,7 @@ import pytest
 
 import mangorest.mongo as mongo
 import mangorest.services as services
-from mangorest import app
+from mangorest import app, exceptions
 
 
 @pytest.fixture
@@ -27,6 +27,9 @@ def test_args():
         multiple_doc: List
         updated_doc: Dict
         api_url: str
+        query_for_updates_deletes: Dict
+        multiple_doc_update: Dict
+        dummy_oid: str = "61a993c68cd8469da9bd1eb4"
 
     doc = {
         "country": "USSR",
@@ -55,8 +58,17 @@ def test_args():
         "thrust_to_weight_ratio": 150,
     }
 
+    doc_list_update = {"$set": {"country": "Moon"}}
+
     args = TestingArguments(
-        "rocket_engines", {}, doc, doc_list, doc_update, "/api/rockets"
+        collection_name="rocket_engines",
+        query_empty={},
+        single_doc=doc,
+        multiple_doc=doc_list,
+        updated_doc=doc_update,
+        api_url="/api/rockets",
+        query_for_updates_deletes={"manufacturer": {"$eq": "Energomasher"}},
+        multiple_doc_update=doc_list_update,
     )
     return args
 
@@ -142,6 +154,72 @@ def test_delete_document(db_connection, test_args, oid_query):
     assert result is True
 
 
+def test_raises_DocumentNotFoundError_when_getting_document(db_connection, test_args):
+    with pytest.raises(exceptions.DocumentNotFoundError):
+        result = services.fetch_document(
+            db_connection, test_args.collection_name, test_args.dummy_oid
+        )
+
+
+def test_raises_DocumentNotFoundError_when_updating_document(db_connection, test_args):
+    with pytest.raises(exceptions.DocumentNotFoundError):
+        result = services.update_document(
+            db_connection,
+            test_args.collection_name,
+            test_args.dummy_oid,
+            test_args.updated_doc,
+        )
+
+
+def test_raises_DocumentNotFoundError_when_deleting_document(db_connection, test_args):
+    with pytest.raises(exceptions.DocumentNotFoundError):
+        result = services.delete_document(
+            db_connection, test_args.collection_name, test_args.dummy_oid
+        )
+
+
+def test_update_many_documents(db_connection, test_args):
+    result = services.update_many_documents(
+        db_connection,
+        test_args.collection_name,
+        test_args.query_for_updates_deletes,
+        test_args.multiple_doc_update,
+    )
+    assert type(result) is tuple
+
+
+def test_raises_EmptyQueryFatalActionError_when_updating_documents_without_query(
+    db_connection, test_args
+):
+    with pytest.raises(exceptions.EmptyQueryFatalActionError):
+        result = services.update_many_documents(
+            db_connection,
+            test_args.collection_name,
+            test_args.query_empty,
+            test_args.multiple_doc_update,
+        )
+
+
+def test_delete_many_documents(db_connection, test_args):
+    result = services.delete_many_documents(
+        db_connection,
+        test_args.collection_name,
+        test_args.query_for_updates_deletes,
+    )
+    assert type(result) is int
+
+
+def test_raises_EmptyQueryFatalActionError_when_deleting_documents_without_query(
+    db_connection, test_args
+):
+    with pytest.raises(exceptions.EmptyQueryFatalActionError):
+        result = services.delete_many_documents(
+            db_connection,
+            test_args.collection_name,
+            test_args.query_empty,
+        )
+
+
 # ============================================================
 # Testing endpoints
 # ============================================================
@@ -159,6 +237,15 @@ def test_create_document_endpoint(client, test_args, jwt_token):
     resp = client.post(
         test_args.api_url,
         json=test_args.single_doc,
+        headers={"Authorization": f"Bearer {jwt_token}"},
+    )
+    assert resp.status == "201 CREATED"
+
+
+def test_create_many_documents_endpoint(client, test_args, jwt_token):
+    resp = client.post(
+        test_args.api_url,
+        json=test_args.multiple_doc,
         headers={"Authorization": f"Bearer {jwt_token}"},
     )
     assert resp.status == "201 CREATED"
@@ -186,9 +273,29 @@ def test_update_document_endpoint(client, test_args, oid_query, jwt_token):
     assert resp.status == "204 NO CONTENT"
 
 
+def test_update_many_documents_endpoint(client, test_args, jwt_token):
+    resp = client.patch(
+        f"{test_args.api_url}?manufacturer=Energomasher",
+        json=test_args.multiple_doc_update,
+        headers={"Authorization": f"Bearer {jwt_token}"},
+    )
+    assert resp.json["matched_items"] == 2
+    assert resp.json["modified_items"] == 2
+    assert resp.status == "200 OK"
+
+
 def test_delete_document_endpoint(client, test_args, oid_query, jwt_token):
     resp = client.delete(
         f"{test_args.api_url}/{oid_query}",
         headers={"Authorization": f"Bearer {jwt_token}"},
     )
     assert resp.status == "204 NO CONTENT"
+
+
+def test_delete_many_documents_endpoint(client, test_args, jwt_token):
+    resp = client.delete(
+        f"{test_args.api_url}?manufacturer=Energomasher",
+        headers={"Authorization": f"Bearer {jwt_token}"},
+    )
+    assert resp.json["items_deleted"] == 2
+    assert resp.status == "200 OK"
