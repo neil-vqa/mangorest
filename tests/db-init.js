@@ -11,10 +11,7 @@ db.createUser(
     }
 );
 
-db.createCollection("rocket_engines")
-db.createCollection("launch_vehicles")
-
-db.rocketeer.insert(
+db.rocket_engines.insert(
     { "init": 1 }
 )
 

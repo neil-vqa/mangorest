@@ -100,7 +100,7 @@ Optional. Name of the collection that will be used for storing data of MangoREST
 Here is an example config taken from the `.env.example` file in this repo:
 
 ```bash
-FLASK_ENV=production
+FLASK_ENV=development
 FLASK_APP=mangorest:app
 JWT_SECRET_KEY=*1g$&3%an#x!+rogd@*iyhffs!a32575kd-)d*ajyr2s$kiuf!
 MONGODB_URI=mongodb://userme:passme@0.0.0.0:27017/mangorest
@@ -129,6 +129,10 @@ A quick and easy way to deploy and configure MangoREST as a [Heroku](https://www
 A quick and easy way to deploy and configure MangoREST as a [Render](https://render.com/) app. Note that Render *asks* for Payment Information (if you haven't provided yet) when deploying thru One-Click button. But if deploying step-by-step thru the Render dashboard, *no* Payment Information will be asked.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+### Docker
+
+WIP
 
 ### Install as a package + gunicorn
 
@@ -367,3 +371,39 @@ To conclude this section, here are the type hints you can use in query strings.
 | `list-time` | Array with datetime.time elements |
 | `list-datetime` | Array with datetime.datetime elements |
 | `list-timedelta` | Array with datetime.timedelta elements |
+
+
+## Development
+
+The project uses [poetry](https://python-poetry.org/) to package and manage dependencies. After activating a virtual environment, run:
+
+```bash
+(.venv)$ poetry install
+```
+
+A *compose-devdb.yml* is provided for developing and testing. It is recommended to use the param values in the *.env.example* file when developing and testing.
+
+Start containers:
+
+```bash
+(.venv)$ docker-compose -f compose-devdb.yml up -d --build
+```
+
+Then, run tests:
+
+```bash
+(.venv)$ pytest
+```
+
+Please do linting:
+
+```bash
+bash scripts/lint-check.sh
+```
+
+And fix formatting:
+
+```bash
+bash scripts/format.sh
+```
+
