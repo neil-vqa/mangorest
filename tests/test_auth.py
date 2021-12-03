@@ -4,6 +4,7 @@ import pytest
 from bson.objectid import ObjectId
 
 import mangorest.auth as auth
+import mangorest.config as config
 import mangorest.mongo as mongo
 
 
@@ -28,6 +29,6 @@ def test_create_user_service(user):
 
 
 def test_login_service(db_connection, user):
-    user_collection = db_connection["mangorest_users"]
+    user_collection = db_connection[config.MANGO_USER_COLLECTION]
     resp = auth.login_service(user_collection, user.username, user.password)
     assert type(resp) is auth.MangoUser

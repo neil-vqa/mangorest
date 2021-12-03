@@ -29,6 +29,7 @@ You may also view the auto-generated TOC using the button located at the upper l
 - [Installation and Deployment](#installation-and-deployment)
   * [Deploy to Heroku with One-Click button](#deploy-to-heroku-with-one-click-button)
   * [Deploy to Render with One-Click button](#deploy-to-render-with-one-click-button)
+  * [Docker](#docker)
   * [Install as a package + gunicorn](#install-as-a-package---gunicorn)
 - [Authentication](#authentication)
   * [JWT Auth](#jwt-auth)
@@ -40,6 +41,11 @@ You may also view the auto-generated TOC using the button located at the upper l
   * [Inserting and Updating](#inserting-and-updating)
   * [Deleting](#deleting)
 - [Type Hints](#type-hints)
+  * [For fields with NON-STRING values](#for-fields-with-non-string-values)
+  * [When using comparison query operators](#when-using-comparison-query-operators)
+  * [When using logical query operators](#when-using-logical-query-operators)
+  * [Type Hinting notation](#type-hinting-notation)
+- [Development](#development)
 
 
 ## Get Started
@@ -96,13 +102,13 @@ Optional. Name of the collection that will be used for storing data of MangoREST
 Here is an example config taken from the `.env.example` file in this repo:
 
 ```bash
-FLASK_ENV=production
+FLASK_ENV=development
 FLASK_APP=mangorest:app
 JWT_SECRET_KEY=*1g$&3%an#x!+rogd@*iyhffs!a32575kd-)d*ajyr2s$kiuf!
-MONGODB_URI=mongodb+srv://<username>:<password>@nvqa-dbs.93h2e.mongodb.net/myDatabase?retryWrites=true&w=majority
-DATABASE=therocketcorpdb
+MONGODB_URI=mongodb://userme:passme@0.0.0.0:27017/mangorest
+DATABASE=mangorest
 COLLECTIONS=rockets:rocket_engines,vehicles:launch_vehicles
-MANGO_USER_COLLECTION=user_db
+MANGO_USER_COLLECTION=users
 ```
 
 
@@ -125,6 +131,10 @@ A quick and easy way to deploy and configure MangoREST as a [Heroku](https://www
 A quick and easy way to deploy and configure MangoREST as a [Render](https://render.com/) app. Note that Render *asks* for Payment Information (if you haven't provided yet) when deploying thru One-Click button. But if deploying step-by-step thru the Render dashboard, *no* Payment Information will be asked.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+### Docker
+
+WIP
 
 ### Install as a package + gunicorn
 
@@ -172,12 +182,12 @@ As a summary for this section, here are the authentication-related endpoints:
 |----------|-------------|
 | `POST /login` | Send username and password; returns JWT token |
 | `GET /me` | Provide JWT token in Authorization header; returns the username of the authenticated user |
-| `POST /register` | If set up like the above, send username and password; returns the username and oid of the newly creadted user |
+| `POST /register` | If set up like the above, send username and password; returns the username and oid of the newly created user |
 
 
 ## API
 
-Routes provide GET, POST, PATCH, DELETE verbs. By default, only GET is available publicly, the rest require authentication. Read [Authentication](#authentication) section for customizing this behavior. Please note that all enpoints are within `/api` which is automatically prepended by MangoREST. 
+Routes provide GET, POST, PATCH, DELETE verbs. By default, only GET is available publicly, the rest require authentication. Read [Authentication](#authentication) section for authentication details. Please note that all enpoints are within `/api` which is automatically prepended by MangoREST. 
 
 ### Querying Collections
 
@@ -247,7 +257,7 @@ GET /api/rockets/6195b0eb829a2784b4459a7f
 
 Create and Update operations can only be done by authenticated users.
 
-**SINGLE INSERT.** Using the *rocket_engine* collection above, create a new document by:
+**SINGLE INSERT.** Using the *rocket_engine* collection above, create a new document as shown below. This responds with `201 CREATED` with the newly created document's `_id` if succcessful.
 
 ```
 POST /api/rockets
@@ -255,9 +265,7 @@ POST /api/rockets
 {"name":"RD-180", "country":"Russia", "thrust_to_weight_ratio": 78, "manufacturer": "NPO Energomash"}
 ```
 
-This responds with `201 CREATED` with the newly created document's `_id` if succcessful.
-
-**MULTIPLE INSERTS.** To insert multiple documents into a collection, pass an array of objects.
+**BULK INSERTS.** To insert multiple documents into a collection, pass an array of objects. This responds with `201 CREATED` with an array of the newly created documents' `_id`s if succcessful.
 
 ```
 POST /api/rockets
@@ -278,9 +286,7 @@ POST /api/rockets
 ]
 ```
 
-This responds with `201 CREATED` with an array of the newly created documents' `_id`s if succcessful.
-
-**SINGLE UPDATE.** To update a document, specify the fields to be updated:
+**SINGLE UPDATE.** To update a document, use PATCH and specify the fields to be updated. This responds with `204 NO CONTENT` if succcessful.
 
 ```
 PATCH /api/rockets/61a30c07032f56ecef3c845e
@@ -291,19 +297,124 @@ PATCH /api/rockets/61a30c07032f56ecef3c845e
 }
 ```
 
-This responds with `204 NO CONTENT` if succcessful.
+**BULK UPDATES.** Use PATCH to the collection for updating multiple documents. Request body must specify [update operators](https://docs.mongodb.com/manual/reference/operator/update/). The `_projection, _sort, _limit, _skip` query params are ignored. Updating an unfiltered collection will be considered a fatal action and will respond with `403 FORBIDDEN`. Successful update will return `200 OK`.
+
+```
+PATCH /api/rockets?manufacturer=Energomasher
+
+{
+  "$set": {
+    "country": "Moon"
+  }
+}
+```
 
 ### Deleting
 
-**SINGLE DELETE.** To delete a single document, do the following:
+**SINGLE DELETE.** To delete a single document, do as shown below. This responds with `204 NO CONTENT` if succcessful.
 
 ```
 DELETE /api/rockets/61a30c07032f56ecef3c845e
 ```
 
-This responds with `204 NO CONTENT` if succcessful.
+**BULK DELETES.** Use DELETE to the collection for multiple deletes. The `_projection, _sort, _limit, _skip` query params are ignored. Deleting an unfiltered collection will be considered a fatal action and will respond with `403 FORBIDDEN`. Successful delete will return `200 OK`.
 
+```
+DELETE /api/rockets?manufacturer=Energomasher
+```
 
 ## Type Hints
 
-WIP
+Type hints must be used in query strings to correctly filter the data to be returned. This is necessary since MangoREST currently does not generate or maintain a schema of the collection as a reference for the types. This section presents the ways type hints are used.
+
+### For fields with NON-STRING values
+
+Queries where the field type is expected to be a *string* such as `GET /api/rockets?country=Antarctica` does not need any type hinting. On the other hand, type hints are needed if a field type is expected to be other than a string. Such examples are:
+
+```
+GET /api/rockets?is_active=[bool].true
+
+GET /api/rockets?thrust_to_weight_ratio=[int].70
+```
+
+### When using comparison query operators
+
+Comparison query operators such as `eq`, `gt`, `lte` can be used in the query string. However, type hint must be provided to correctly filter the data.
+
+```
+GET /api/rockets?thrust_to_weight_ratio=lt[int].70
+
+GET /api/rockets?company=eq[str].Rocket+Lab&thrust_to_weight_ratio=gte[int].50
+```
+
+Some operators expect an array as the value such as `in` and `nin`. Array elements can be type hinted by:
+
+```
+GET /api/rockets?country=in[list-str].[North+Pole,Moon,Antarctica]
+```
+
+### When using logical query operators
+
+Logical query operators such as `and`, `or` can be used in the query string. Type hints must be provided.
+
+```
+GET /api/rockets?and=(thrust_to_weight_ratio.gt[int].70,country.eq[str].North+Pole,is_active.eq[bool].true)
+```
+
+### Type Hinting notation
+
+To conclude this section, here are the type hints you can use in query strings.
+
+| Hint | Description/Python Type |
+|------|------|
+| `int` | integer |
+| `float` | float |
+| `bool` | boolean |
+| `str` | string |
+| `date` | datetime.date |
+| `time` |  datetime.time |
+| `datetime` | datetime.datetime |
+| `timedelta` | datetime.timedelta |
+| `list-int` | Array with integer elements |
+| `list-float` | Array with float elements |
+| `list-str` | Array with string elements |
+| `list-date` | Array with datetime.date elements |
+| `list-time` | Array with datetime.time elements |
+| `list-datetime` | Array with datetime.datetime elements |
+| `list-timedelta` | Array with datetime.timedelta elements |
+
+
+## Development
+
+The project uses [poetry](https://python-poetry.org/) to package and manage dependencies. After activating a virtual environment, run:
+
+```bash
+(.venv)$ poetry install
+```
+
+A *compose-devdb.yml* is provided for developing and testing. It is recommended to use the param values in the *.env.example* file when developing and testing.
+
+Start containers:
+
+```bash
+(.venv)$ docker-compose -f compose-devdb.yml up -d --build
+```
+
+Then, run tests:
+
+```bash
+(.venv)$ pytest
+```
+
+Please do linting:
+
+```bash
+bash scripts/lint-check.sh
+```
+
+And fix formatting:
+
+```bash
+bash scripts/format.sh
+```
+

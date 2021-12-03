@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pymongo
 from bson import json_util
@@ -263,6 +263,27 @@ def update_document(
     return True
 
 
+def update_many_documents(
+    db: Database, collection_name: Any, query: Dict, changes: Dict
+) -> Tuple[int, int]:
+    """Updates multiple documents.
+
+    Returns:
+        Tuple of number of matched items given the query and number of modified items.
+
+    Raises:
+        EmptyQueryFatalActionError: if query is empty
+    """
+    db_collection = db[collection_name]
+    if not query:
+        raise exceptions.EmptyQueryFatalActionError(
+            "Updating aborted. Updates with empty query are not allowed."
+        )
+
+    result = mongo.update_multiple_documents(db_collection, query, changes)
+    return result
+
+
 def delete_document(db: Database, collection_name: Any, oid: str) -> bool:
     """Deletes a single document with the given objectid."""
 
@@ -275,3 +296,22 @@ def delete_document(db: Database, collection_name: Any, oid: str) -> bool:
         )
 
     return True
+
+
+def delete_many_documents(db: Database, collection_name: Any, query: Dict) -> int:
+    """Deletes multiple documents.
+
+    Returns:
+        Number of items deleted.
+
+    Raises:
+        EmptyQueryFatalActionError: if query is empty
+    """
+    db_collection = db[collection_name]
+    if not query:
+        raise exceptions.EmptyQueryFatalActionError(
+            "Deleting aborted. Deletes with empty query are not allowed."
+        )
+
+    result = mongo.delete_multiple_documents(db_collection, query)
+    return result

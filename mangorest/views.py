@@ -28,6 +28,11 @@ def unathorized_request(e):
     return jsonify(error=str(e)), 401
 
 
+@app.errorhandler(403)
+def forbidden_action(e):
+    return jsonify(error=str(e)), 403
+
+
 @app.errorhandler(404)
 def resource_not_found(e):
     return jsonify(error=str(e)), 404
@@ -70,12 +75,61 @@ def create_document_in_collection(resource) -> Tuple[Response, int]:
     """Endpoint for creating single or multiple documents."""
 
     try:
-        document = request.json
         collection_name = services.check_resource_name(resource)
+        document = request.json
         document_id = services.create_document(db, collection_name, document)
         return jsonify(document_id), 201
     except exceptions.ResourceNameNotFoundError as e:
         abort(404, description=e)
+
+
+@app.patch("/api/<resource>")
+@flask_jwt.jwt_required()
+def update_documents_in_collection(resource) -> Tuple[Response, int]:
+    """Endpoint for  updating multiple documents."""
+
+    try:
+        collection_name = services.check_resource_name(resource)
+        request_args = request.args.copy()
+        filters = ["_projection", "_sort", "_limit", "_skip"]
+
+        for item in filters:
+            request_args.pop(item, None)
+
+        modifications = request.json
+        query = services.map_to_query_operator(request_args)
+        matched_items, modified_items = services.update_many_documents(
+            db, collection_name, query, modifications  # type: ignore
+        )
+        return jsonify(matched_items=matched_items, modified_items=modified_items), 200
+    except exceptions.ResourceNameNotFoundError as e:
+        abort(404, description=e)
+    except exceptions.EmptyQueryFatalActionError as e:
+        abort(403, description=e)
+
+
+@app.delete("/api/<resource>")
+@flask_jwt.jwt_required()
+def delete_documents_in_collection(resource) -> Tuple[Response, int]:
+    """Endpoint for deleting multiple documents."""
+
+    try:
+        collection_name = services.check_resource_name(resource)
+        request_args = request.args.copy()
+        filters = ["_projection", "_sort", "_limit", "_skip"]
+
+        for item in filters:
+            request_args.pop(item, None)
+
+        query = services.map_to_query_operator(request_args)
+        items_deleted = services.delete_many_documents(
+            db, collection_name, query  # type: ignore
+        )
+        return jsonify(items_deleted=items_deleted), 200
+    except exceptions.ResourceNameNotFoundError as e:
+        abort(404, description=e)
+    except exceptions.EmptyQueryFatalActionError as e:
+        abort(403, description=e)
 
 
 @app.get("/api/<resource>/<oid>")
@@ -96,8 +150,8 @@ def get_document(resource, oid) -> Response:
 @flask_jwt.jwt_required()
 def update_document_in_collection(resource, oid) -> Tuple[Response, int]:
     try:
-        document = request.json
         collection_name = services.check_resource_name(resource)
+        document = request.json
         services.update_document(db, collection_name, oid, document)
         return jsonify(), 204
     except exceptions.ResourceNameNotFoundError as e:

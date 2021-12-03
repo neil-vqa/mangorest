@@ -43,6 +43,9 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: python -m poetry install
 
+      - name: Start containers
+        run: docker-compose -f compose-mongodb.yml up -d --build
+
       - name: Lint
         run: python -m poetry run bash scripts/lint-check.sh
 
@@ -55,3 +58,6 @@ jobs:
           DATABASE: ${{ secrets.DATABASE }}
           COLLECTIONS: ${{ secrets.COLLECTIONS }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+
+      - name: Stop containers
+        run: docker-compose -f compose-mongodb.yml down
