@@ -76,7 +76,7 @@ def test_args():
 @pytest.fixture
 def oid_query(db_connection, test_args):
     doc = db_connection[test_args.collection_name].find_one({"name": "RD-180"})
-    parsed_doc = services.parse_object_id(doc)
+    parsed_doc = services.parse_bson(doc)
 
     return parsed_doc["_id"]["$oid"]
 

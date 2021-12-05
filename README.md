@@ -89,7 +89,7 @@ Required. Name of the database to be exposed to REST clients. MangoREST only all
 
 #### COLLECTIONS
 
-Required. A sequence of `resource_name:collection_name` pairs separated by commas. To avoid exposing the database's collection names, the `resource_name`s will be used for the API endpoints. Map a `resource_name` to the name of the collection that will be exposed to REST clients. These collections should already exist even if they are still empty.
+Required. A sequence of `resource_name:collection_name` pairs separated by commas. To avoid exposing the database's collection names, the `resource_name`s will be used for the API endpoints. Map a `resource_name` to the name of the collection that will be exposed to REST clients. These collections should already exist.
 
 If you don't care exposing **ALL** collections and their collection names, you can use an asterisk wildcard `*`. The collection names themselves will be the `resource_name` to be used for the API endpoints.
 
@@ -221,6 +221,14 @@ GET /api/rockets?and=(country.eq[str].USA,thrust_to_weight_ratio.gte[int].50)
 
 This query string syntax instructs MangoREST to get the results by using mongodb's $and [logical query operator](https://docs.mongodb.com/manual/reference/operator/query-logical/). The expressions are separated by commas, and each expression is in the form of `field_name.operator[type-hint].value`.
 
+Below is another example of a complex query using logical operators.
+
+```
+GET /api/rockets?thrust_to_weight_ratio.gte[int].50&or=(country.eq[str].USA,country.eq[str].Soviet+Union)
+```
+
+This means that *get all rockets with thrust-to-weight ratio greater than or equal to 50 and whose country is USA or Soviet Union*.
+
 **PROJECTION.** To specify only a subset of fields of the documents to be returned, use the `_projection` param.
 
 ```
@@ -247,11 +255,13 @@ GET /api/rockets?country=USA&_skip=10
 
 ### Getting a Document
 
-MangoREST currently only supports getting a single document thru its [ObjectId](https://docs.mongodb.com/manual/reference/bson-types/#std-label-objectid).
+MangoREST supports getting a single document thru its [ObjectId](https://docs.mongodb.com/manual/reference/bson-types/#std-label-objectid).
 
 ```
 GET /api/rockets/6195b0eb829a2784b4459a7f
 ```
+
+If you want to get a document thru another field set as your unique identifier, you may use the field as a query param in the query string when querying the collection. Updating and deleting that document must be done using its ObjectId though (see SINGLE UPDATE and SINGLE DELETE below).
 
 ### Inserting and Updating
 
@@ -265,7 +275,7 @@ POST /api/rockets
 {"name":"RD-180", "country":"Russia", "thrust_to_weight_ratio": 78, "manufacturer": "NPO Energomash"}
 ```
 
-**BULK INSERTS.** To insert multiple documents into a collection, pass an array of objects. This responds with `201 CREATED` with an array of the newly created documents' `_id`s if succcessful.
+**MULTIPLE INSERTS.** To insert multiple documents into a collection, pass an array of objects. This responds with `201 CREATED` with an array of the newly created documents' `_id`s if succcessful.
 
 ```
 POST /api/rockets
@@ -297,7 +307,7 @@ PATCH /api/rockets/61a30c07032f56ecef3c845e
 }
 ```
 
-**BULK UPDATES.** Use PATCH to the collection for updating multiple documents. Request body must specify [update operators](https://docs.mongodb.com/manual/reference/operator/update/). The `_projection, _sort, _limit, _skip` query params are ignored. Updating an unfiltered collection will be considered a fatal action and will respond with `403 FORBIDDEN`. Successful update will return `200 OK`.
+**MULTIPLE UPDATES.** Use PATCH to the collection for updating multiple documents. Request body must specify [update operators](https://docs.mongodb.com/manual/reference/operator/update/). The `_projection, _sort, _limit, _skip` query params are ignored. Updating an unfiltered collection will be considered a fatal action and will respond with `403 FORBIDDEN`. Successful update will return `200 OK`.
 
 ```
 PATCH /api/rockets?manufacturer=Energomasher
@@ -317,7 +327,7 @@ PATCH /api/rockets?manufacturer=Energomasher
 DELETE /api/rockets/61a30c07032f56ecef3c845e
 ```
 
-**BULK DELETES.** Use DELETE to the collection for multiple deletes. The `_projection, _sort, _limit, _skip` query params are ignored. Deleting an unfiltered collection will be considered a fatal action and will respond with `403 FORBIDDEN`. Successful delete will return `200 OK`.
+**MULTIPLE DELETES.** Use DELETE to the collection for multiple deletes. The `_projection, _sort, _limit, _skip` query params are ignored. Deleting an unfiltered collection will be considered a fatal action and will respond with `403 FORBIDDEN`. Successful delete will return `200 OK`.
 
 ```
 DELETE /api/rockets?manufacturer=Energomasher
