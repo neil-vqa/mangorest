@@ -1,4 +1,3 @@
-import datetime
 import json
 import logging
 import re
@@ -6,7 +5,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pymongo
 from bson import json_util
+from bson.json_util import JSONOptions
 from bson.objectid import ObjectId
+from dateutil.parser import parse as date_parser
 from pymongo.database import Database
 
 from mangorest import config, exceptions, mongo
@@ -24,21 +25,25 @@ mapper.verify_collection_exists()
 endpoints = mapper.resource_name_map
 collection_set = mapper.collection_set
 
+datetime_fields_list = config.DATETIME_FIELDS.split(",")
+
+json_options = JSONOptions()
+json_options.datetime_representation = 2
+
 # ===============================================
 # utilities
 # ===============================================
 
 
-def parse_object_id(document):
-    """Converts ObjectIds within document to be serializable."""
+def parse_bson(document):
+    """Converts document(s) to be serializable."""
 
-    if (
-        type(document) is ObjectId
-    ):  # case where the ObjectId itself is directly passed to the function
+    # case where the ObjectId itself is directly passed to the function
+    if type(document) is ObjectId:
         oid = json.loads(json_util.dumps(document))
         oid_dict = {"_id": oid}
         return oid_dict
-    return json.loads(json_util.dumps(document))
+    return json.loads(json_util.dumps(document, json_options=json_options))
 
 
 def check_resource_name(resource_name):
@@ -55,10 +60,6 @@ def cast_query_types(query_type, query_value) -> Any:
         "float": float,
         "bool": bool,
         "str": str,
-        "date": datetime.date,
-        "time": datetime.time,
-        "datetime": datetime.datetime,
-        "timedelta": datetime.timedelta,
     }
 
     # used for enforcing the type of the list items
@@ -66,17 +67,41 @@ def cast_query_types(query_type, query_value) -> Any:
         "list-int": int,
         "list-float": float,
         "list-str": str,
-        "list-date": datetime.date,
-        "list-time": datetime.time,
-        "list-datetime": datetime.datetime,
-        "list-timedelta": datetime.timedelta,
     }
+
+    # for identifying datetime type hint
+    datetime_variant_set = set(
+        [
+            "date",
+            "time",
+            "datetime",
+            "timedelta",
+        ]
+    )
+
+    # for identifying datetime hint wirhin list
+    datetime_list_variant_set = set(
+        [
+            "list-date",
+            "list-time",
+            "list-datetime",
+            "list-timedelta",
+        ]
+    )
 
     if query_type in list_variant:
         parsed_query_value = query_value[1:-1].split(",")
         query_value = [list_variant[query_type](item) for item in parsed_query_value]
         return query_value
-    return supported_types[query_type](query_value)
+    elif query_type in datetime_variant_set:
+        parsed_datetime = date_parser(query_value)
+        return parsed_datetime
+    elif query_type in datetime_list_variant_set:
+        parsed_query_value = query_value[1:-1].split(",")
+        query_value = [date_parser(item) for item in parsed_query_value]
+        return query_value
+    else:
+        return supported_types[query_type](query_value)
 
 
 def parse_logical_query(query) -> List[Dict]:
@@ -190,6 +215,13 @@ def parse_sort(sort: str) -> Any:
     return sort_list
 
 
+def parse_datetime_fields(document: Any) -> Any:
+    for field in datetime_fields_list:
+        if field in document:
+            document[field] = date_parser(document[field])
+    return document
+
+
 # ===============================================
 # crud services
 # ===============================================
@@ -215,7 +247,7 @@ def fetch_collection(
     query_result = mongo.query_collection(
         db_collection, query, response_fields, sort_options, limit_count, skip_value
     )
-    documents = [parse_object_id(item) for item in query_result]
+    documents = [parse_bson(item) for item in query_result]
     return documents
 
 
@@ -225,11 +257,15 @@ def create_document(db: Database, collection_name: Any, document_obj: Any):
     db_collection = db[collection_name]
 
     if type(document_obj) is dict:
+        document_obj = parse_datetime_fields(document_obj)
         document_oid = mongo.insert_single_document(db_collection, document_obj)
-        return parse_object_id(document_oid)
+        return parse_bson(document_oid)
     elif type(document_obj) is list:
-        document_oids = mongo.insert_multiple_documents(db_collection, document_obj)
-        return [parse_object_id(item) for item in document_oids]
+        parsed_documents_list = [parse_datetime_fields(item) for item in document_obj]
+        document_oids = mongo.insert_multiple_documents(
+            db_collection, parsed_documents_list
+        )
+        return [parse_bson(item) for item in document_oids]
 
 
 def fetch_document(db: Database, collection_name: Any, oid: str) -> Dict:
@@ -243,7 +279,7 @@ def fetch_document(db: Database, collection_name: Any, oid: str) -> Dict:
             f"Document with ObjectId {oid} not found."
         )
 
-    parsed_document = parse_object_id(query_result)
+    parsed_document = parse_bson(query_result)
     return parsed_document
 
 
@@ -253,6 +289,7 @@ def update_document(
     """Updates a single document with the given objectid."""
 
     db_collection = db[collection_name]
+    document_obj = parse_datetime_fields(document_obj)
     update_result = mongo.update_single_document(db_collection, oid, document_obj)
 
     if update_result is None:

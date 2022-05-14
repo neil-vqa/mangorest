@@ -12,6 +12,7 @@ DATABASE = os.environ["DATABASE"]
 COLLECTION = os.environ["COLLECTIONS"]
 JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 MANGO_USER_COLLECTION = os.environ.get("MANGO_USER_COLLECTION", "mangorest_users")
+DATETIME_FIELDS = os.environ["DATETIME_FIELDS"]
 
 
 class MangoConfigurator:
